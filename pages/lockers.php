@@ -1,34 +1,6 @@
 <?php include('../includes/header.php'); ?>
 
 <style>
-/* Smart Lockers Glassmorphism */
-.locker-hero {
-    position: relative;
-    padding: 120px 0 60px;
-    background: url('../assets/img/lockers_bg.jpg') no-repeat center center/cover;
-    background-color: #0a0e17; /* Fallback */
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    min-height: 100vh;
-}
-.locker-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(10,14,23,0.95) 0%, rgba(8,17,32,0.9) 100%);
-}
-.locker-content {
-    position: relative;
-    z-index: 2;
-}
-.glass-box {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
-    height: 100%;
-}
 .locker-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -36,196 +8,227 @@
     margin-top: 20px;
 }
 .locker-door {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 10px;
-    height: 80px;
+    background: rgba(6, 11, 20, 0.85);
+    border: 1px solid rgba(0, 242, 254, 0.25);
+    border-radius: var(--radius-md);
+    height: 90px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     color: #fff;
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: var(--transition);
     cursor: pointer;
-    transition: all 0.3s;
     position: relative;
-    overflow: hidden;
 }
 .locker-door:hover {
-    background: rgba(0,255,255,0.1);
-    box-shadow: 0 0 15px rgba(0,255,255,0.3);
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
 }
 .locker-door.occupied {
-    background: rgba(220, 53, 69, 0.2);
-    border-color: #dc3545;
-    color: #ffcccc;
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
 }
 .locker-door.unlocked {
-    background: rgba(40, 167, 69, 0.3);
-    border-color: #28a745;
-    color: #ccffcc;
-    box-shadow: 0 0 20px rgba(40,167,69,0.5);
+    background: rgba(16, 185, 129, 0.25);
+    border-color: #10b981;
+    color: #86efac;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+    animation: doorGlow 1.5s infinite alternate;
 }
+@keyframes doorGlow {
+    from { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+    to { box-shadow: 0 0 30px rgba(16, 185, 129, 0.8); }
+}
+
 .nfc-reader {
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    border: 2px dashed #00ffff;
+    border: 2px dashed var(--cyan);
     margin: 20px auto;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2rem;
-    color: #00ffff;
-    animation: spinSlow 10s linear infinite;
-}
-@keyframes spinSlow {
-    100% { transform: rotate(360deg); }
+    font-size: 2.2rem;
+    color: var(--cyan);
+    transition: var(--transition);
 }
 .pin-input {
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid #00ffff;
-    color: #fff;
-    font-size: 2rem;
-    text-align: center;
-    width: 60%;
-    margin: 0 auto;
-    outline: none;
-    letter-spacing: 15px;
-}
-.glow-btn {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    border: none;
-    color: white;
-    font-weight: bold;
-    border-radius: 50px;
-    padding: 10px 30px;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    transition: all 0.3s ease;
-}
-.glow-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.9);
+    background: rgba(6, 11, 20, 0.9) !important;
+    border: 2px solid rgba(0, 242, 254, 0.3) !important;
+    color: var(--cyan) !important;
+    font-size: 1.8rem !important;
+    text-align: center !important;
+    letter-spacing: 12px !important;
+    border-radius: var(--radius-md) !important;
 }
 </style>
 
-<div class="locker-hero text-light">
-    <div class="container locker-content">
-        
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold"><i class="fa-solid fa-vault text-info"></i> Smart Lockers</h1>
-            <p class="lead text-muted">Module 9: 24/7 Secure AI-Monitored Parcel Retrieval.</p>
-        </div>
+<!-- HERO SECTION -->
+<section class="page-hero hero-lockers">
+    <div class="container text-center">
+        <span class="badge-green mb-2 d-inline-block"><i class="fa-solid fa-vault me-1"></i> 24/7 Decentralized Vault Network</span>
+        <h1 class="hero-title-gradient">Smart IoT Delivery Lockers</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 650px;">
+            Contactless parcel pick-up & drop-off. Authenticate via smartphone NFC tap or one-time encrypted PIN.
+        </p>
+    </div>
+</section>
 
+<!-- LOCKER TERMINAL INTERFACE -->
+<section class="py-5" style="background: var(--bg-main);">
+    <div class="container">
         <div class="row g-4 justify-content-center">
-            
-            <!-- Locker Visualizer -->
+            <!-- Locker Grid Visualizer -->
             <div class="col-lg-5">
-                <div class="glass-box">
-                    <h5 class="text-info text-center mb-2">Pulse Locker Terminal #402</h5>
-                    <p class="text-center text-muted small">Location: Central Mall, Karachi</p>
-                    
+                <div class="pulse-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-server text-info"></i>
+                            <h5 class="fw-bold text-white mb-0">Pulse Terminal #402</h5>
+                        </div>
+                        <span class="badge-cyan small">DHA Phase 6, Karachi</span>
+                    </div>
+                    <p class="text-secondary small mb-4">Click target locker or use the controller on the right to authenticate.</p>
+
                     <div class="locker-grid" id="lockerGrid">
-                        <div class="locker-door">01</div>
-                        <div class="locker-door">02</div>
-                        <div class="locker-door occupied" title="Occupied">03 <i class="fa-solid fa-lock ms-2" style="font-size:0.6rem;"></i></div>
-                        <div class="locker-door">04</div>
-                        <div class="locker-door occupied" id="targetLocker" title="Your Parcel">05 <i class="fa-solid fa-box text-warning ms-2" style="font-size:0.6rem;"></i></div>
-                        <div class="locker-door">06</div>
-                        <div class="locker-door">07</div>
-                        <div class="locker-door occupied" title="Occupied">08 <i class="fa-solid fa-lock ms-2" style="font-size:0.6rem;"></i></div>
-                        <div class="locker-door">09</div>
+                        <div class="locker-door"><span>01</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                        <div class="locker-door"><span>02</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                        <div class="locker-door occupied" title="Occupied"><span>03</span><small class="text-danger" style="font-size: 0.65rem;"><i class="fa-solid fa-lock"></i> Locked</small></div>
+                        <div class="locker-door"><span>04</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                        <div class="locker-door occupied" id="targetLocker" title="Your Incoming Parcel (PP-8492-AI)">
+                            <span>05</span>
+                            <small class="text-warning" style="font-size: 0.65rem;"><i class="fa-solid fa-box"></i> Your Parcel</small>
+                        </div>
+                        <div class="locker-door"><span>06</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                        <div class="locker-door"><span>07</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                        <div class="locker-door occupied" title="Occupied"><span>08</span><small class="text-danger" style="font-size: 0.65rem;"><i class="fa-solid fa-lock"></i> Locked</small></div>
+                        <div class="locker-door"><span>09</span><small class="text-secondary font-monospace" style="font-size: 0.65rem;">Empty</small></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 small text-secondary">
+                        <div><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(6,11,20,0.85); border:1px solid #00f2fe;" class="me-1"></span> Available</div>
+                        <div><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:rgba(239,68,68,0.4);" class="me-1"></span> In Use</div>
+                        <div><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:#10b981;" class="me-1"></span> Unlocked</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Interaction Panel -->
+            <!-- Interaction Unlock Controller -->
             <div class="col-lg-5">
-                <div class="glass-box text-center">
-                    <h5 class="text-info mb-4">Unlock Your Parcel</h5>
-                    
-                    <!-- Nav Tabs -->
-                    <ul class="nav nav-pills justify-content-center mb-4" id="lockerTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active bg-transparent border border-info text-info rounded-pill mx-1" id="nfc-tab" data-bs-toggle="tab" data-bs-target="#nfc-pane" type="button" role="tab">NFC Unlock</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link bg-transparent border border-info text-info rounded-pill mx-1" id="pin-tab" data-bs-toggle="tab" data-bs-target="#pin-pane" type="button" role="tab">PIN Code</button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content" id="lockerTabsContent">
-                        
-                        <!-- NFC Mode -->
-                        <div class="tab-pane fade show active" id="nfc-pane" role="tabpanel">
-                            <p class="text-muted small">Hold your phone near the terminal scanner.</p>
-                            <div class="nfc-reader" id="nfcReader">
-                                <i class="fa-solid fa-wifi fa-rotate-90"></i>
+                <div class="pulse-card text-center h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h5 class="fw-bold text-white mb-2"><i class="fa-solid fa-key text-info me-2"></i> Terminal Authentication</h5>
+                        <p class="text-secondary small mb-4">Choose verification method to unlock your reserved locker:</p>
+
+                        <!-- Nav Tabs -->
+                        <ul class="nav nav-pills justify-content-center mb-4" id="lockerTabs" role="tablist">
+                            <li class="nav-item me-2">
+                                <button class="btn btn-pulse-outline active" id="nfc-tab" data-bs-toggle="tab" data-bs-target="#nfc-pane" type="button" role="tab">
+                                    <i class="fa-solid fa-wifi fa-rotate-90 me-1"></i> NFC Tap Mode
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="btn btn-pulse-outline" id="pin-tab" data-bs-toggle="tab" data-bs-target="#pin-pane" type="button" role="tab">
+                                    <i class="fa-solid fa-hashtag me-1"></i> 4-Digit PIN Mode
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="lockerTabsContent">
+                            <!-- NFC Mode -->
+                            <div class="tab-pane fade show active" id="nfc-pane" role="tabpanel">
+                                <p class="text-secondary small">Position your NFC-enabled mobile device near the digital sensor.</p>
+                                <div class="nfc-reader" id="nfcReader">
+                                    <i class="fa-solid fa-mobile-screen"></i>
+                                </div>
+                                <button class="glow-btn mt-3" onclick="simulateNFC()">
+                                    <i class="fa-solid fa-satellite-dish me-1"></i> Simulate Mobile NFC Tap
+                                </button>
                             </div>
-                            <button class="glow-btn mt-3" onclick="simulateNFC()">Simulate NFC Tap</button>
+
+                            <!-- PIN Mode -->
+                            <div class="tab-pane fade" id="pin-pane" role="tabpanel">
+                                <p class="text-secondary small">Demo Access PIN: <strong class="text-info">1234</strong></p>
+                                <div class="my-4">
+                                    <input type="password" class="form-control pin-input mx-auto" id="pinInput" maxlength="4" placeholder="••••" style="max-width: 200px;">
+                                </div>
+                                <p class="text-danger small d-none" id="pinError"><i class="fa-solid fa-circle-exclamation me-1"></i> Incorrect PIN code. Try 1234.</p>
+                                <button class="glow-btn" onclick="verifyPin()">
+                                    <i class="fa-solid fa-unlock me-1"></i> Verify Code & Release
+                                </button>
+                            </div>
                         </div>
-                        
-                        <!-- PIN Mode -->
-                        <div class="tab-pane fade" id="pin-pane" role="tabpanel">
-                            <p class="text-muted small">Enter the 4-digit PIN sent to your app.</p>
-                            <input type="password" class="form-control pin-input mb-4" id="pinInput" maxlength="4" placeholder="••••">
-                            <p class="text-danger small d-none" id="pinError">Invalid PIN. Try again.</p>
-                            <button class="glow-btn mt-2" onclick="verifyPin()">Verify & Unlock</button>
+
+                        <!-- Success Box -->
+                        <div id="unlockSuccess" class="mt-4 p-4 rounded-3 d-none" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;">
+                            <h4 class="text-success fw-bold mb-1"><i class="fa-solid fa-circle-check"></i> Door Released!</h4>
+                            <p class="text-secondary small mb-3">Locker <strong>#05</strong> has unlocked. Please retrieve package (PP-8492-AI) and shut the vault door.</p>
+                            <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="resetTerminal()">Reset Simulation</button>
                         </div>
-                        
                     </div>
 
-                    <!-- Success Message (Hidden) -->
-                    <div id="unlockSuccess" class="mt-4 d-none">
-                        <h4 class="text-success"><i class="fa-solid fa-check-circle"></i> Access Granted!</h4>
-                        <p class="text-muted">Locker #05 is now unlocked. Please collect your parcel.</p>
+                    <div class="pt-4 border-top border-secondary border-opacity-25 mt-4 text-secondary small">
+                        <i class="fa-solid fa-shield-halved text-success me-1"></i> AES-256 Encrypted Session &bull; Tamper-Proof Sensors Active
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
-</div>
+</section>
 
 <script>
-// Simulate NFC Tap
 function simulateNFC() {
     const reader = document.getElementById('nfcReader');
-    reader.style.borderColor = "#28a745";
-    reader.style.color = "#28a745";
+    reader.style.borderColor = "#10b981";
+    reader.style.color = "#10b981";
     reader.innerHTML = '<i class="fa-solid fa-check"></i>';
-    
+
     setTimeout(() => {
         unlockLocker();
-    }, 1000);
+    }, 700);
 }
 
-// Verify PIN (Correct PIN is 1234 for demo)
 function verifyPin() {
     const pin = document.getElementById('pinInput').value;
-    if(pin === '1234') {
+    if (pin === '1234') {
         document.getElementById('pinError').classList.add('d-none');
-        document.getElementById('pinInput').style.borderColor = '#28a745';
-        document.getElementById('pinInput').style.color = '#28a745';
         unlockLocker();
     } else {
         document.getElementById('pinError').classList.remove('d-none');
-        document.getElementById('pinInput').style.borderColor = '#dc3545';
     }
 }
 
-// Global Unlock Action
 function unlockLocker() {
-    // Hide inputs, show success
     document.getElementById('lockerTabs').style.display = 'none';
     document.getElementById('lockerTabsContent').style.display = 'none';
     document.getElementById('unlockSuccess').classList.remove('d-none');
+
+    const target = document.getElementById('targetLocker');
+    target.classList.remove('occupied');
+    target.classList.add('unlocked');
+    target.innerHTML = '<span>05</span><small class="text-success fw-bold"><i class="fa-solid fa-door-open"></i> OPEN</small>';
+}
+
+function resetTerminal() {
+    document.getElementById('lockerTabs').style.display = 'flex';
+    document.getElementById('lockerTabsContent').style.display = 'block';
+    document.getElementById('unlockSuccess').classList.add('d-none');
+    document.getElementById('pinInput').value = '';
     
-    // Change Locker UI
-    const targetLocker = document.getElementById('targetLocker');
-    targetLocker.classList.remove('occupied');
-    targetLocker.classList.add('unlocked');
-    targetLocker.innerHTML = '05 <i class="fa-solid fa-door-open ms-2"></i>';
+    const reader = document.getElementById('nfcReader');
+    reader.style.borderColor = "var(--cyan)";
+    reader.style.color = "var(--cyan)";
+    reader.innerHTML = '<i class="fa-solid fa-mobile-screen"></i>';
+
+    const target = document.getElementById('targetLocker');
+    target.classList.remove('unlocked');
+    target.classList.add('occupied');
+    target.innerHTML = '<span>05</span><small class="text-warning"><i class="fa-solid fa-box"></i> Your Parcel</small>';
 }
 </script>
 

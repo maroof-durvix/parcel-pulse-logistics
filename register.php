@@ -1,13 +1,15 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include('config/db.php');
 
 $error = "";
 $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
-    $name = $conn->real_escape_string($_POST['name']);
-    $email = $conn->real_escape_string($_POST['email']);
+    $name = $conn->real_escape_string(trim($_POST['name']));
+    $email = $conn->real_escape_string(trim($_POST['email']));
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
@@ -15,17 +17,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
     $check_sql = "SELECT id FROM users WHERE email = '$email'";
     $check_res = $conn->query($check_sql);
 
-    if ($check_res->num_rows > 0) {
-        $error = "AI User ID (Email) already assigned.";
+    if ($check_res && $check_res->num_rows > 0) {
+        $error = "An account with this Email (AI User ID) is already registered.";
     } elseif ($password !== $confirm_password) {
-        $error = "Passkeys do not match.";
+        $error = "Passkeys do not match. Please re-enter.";
+    } elseif (strlen($password) < 4) {
+        $error = "Passkey must be at least 4 characters long.";
     } else {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        
-        $sql = "INSERT INTO users (name, email, password) VALUES ('$name', '$email', '$hashed_password')";
-        
+        $sql = "INSERT INTO users (name, email, password, role) VALUES ('$name', '$email', '$hashed_password', 'user')";
+
         if ($conn->query($sql) === TRUE) {
-            $success = "AI Clearance Granted! You can now initialize session (Login).";
+            $success = "AI Clearance Granted! Your profile has been initialized. You may now log in.";
         } else {
             $error = "Error during registration: " . $conn->error;
         }
@@ -34,187 +37,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
 ?>
 <?php include('includes/header.php'); ?>
 
-<style>
-/* Smart Register Glassmorphism Styles */
-.register-hero {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    background: linear-gradient(135deg, rgba(10,14,23,0.95), rgba(8,17,32,0.9)), url('assets/img/login_bg.jpg') no-repeat center center/cover;
-    padding-top: 80px; /* nav offset */
-    padding-bottom: 40px;
-}
-.login-glass-card {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 25px;
-    padding: 40px;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
-    position: relative;
-    overflow: hidden;
-}
-.login-glass-card::before {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(0,255,255,0.1) 0%, transparent 60%);
-    animation: rotateBg 10s linear infinite;
-    pointer-events: none;
-    z-index: 0;
-}
-@keyframes rotateBg {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-.login-content {
-    position: relative;
-    z-index: 1;
-}
-.ai-scan-box {
-    text-align: center;
-    margin-bottom: 25px;
-}
-.ai-scan-icon {
-    font-size: 3rem;
-    color: #00ffff;
-    margin-bottom: 10px;
-    text-shadow: 0 0 15px #00ffff;
-    animation: pulseScan 2s infinite;
-}
-@keyframes pulseScan {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.8; }
-}
-.input-group-glass {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    transition: all 0.3s;
-}
-.input-group-glass:focus-within {
-    border-color: #00ffff;
-    box-shadow: 0 0 15px rgba(0,255,255,0.4);
-}
-.input-group-glass i {
-    padding: 15px;
-    color: #00ffff;
-    background: rgba(255,255,255,0.05);
-}
-.glass-input {
-    background: transparent;
-    border: none;
-    color: white;
-    padding: 15px;
-    width: 100%;
-    outline: none;
-}
-.glass-input::placeholder {
-    color: rgba(255,255,255,0.5);
-}
-.glow-btn {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    border: none;
-    color: white;
-    font-weight: bold;
-    border-radius: 50px;
-    padding: 12px 30px;
-    width: 100%;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    transition: all 0.3s ease;
-    margin-top: 10px;
-}
-.glow-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.9);
-    transform: translateY(-2px);
-}
-.form-footer {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 0.9rem;
-}
-.form-footer a {
-    color: #00ffff;
-    text-decoration: none;
-    transition: 0.3s;
-}
-.form-footer a:hover {
-    text-decoration: underline;
-    text-shadow: 0 0 10px #00ffff;
-}
-</style>
-
-<div class="register-hero">
+<section class="page-hero hero-auth" style="min-height: 85vh; display: flex; align-items: center;">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="login-glass-card">
-                    
-                    <div class="login-content">
-                        <div class="ai-scan-box">
-                            <i class="fa-solid fa-user-astronaut ai-scan-icon"></i>
-                            <h3 class="fw-bold text-light mt-2">Request Clearance</h3>
-                            <p class="text-muted" style="font-size: 0.85rem;">Create AI Logistics Profile</p>
+            <div class="col-lg-5 col-md-8">
+                <div class="pulse-card">
+                    <div class="text-center mb-4">
+                        <div class="p-3 rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <h3 class="fw-bold text-white mb-1">Request AI Clearance</h3>
+                        <p class="text-secondary small">Register your corporate or individual shipper identity</p>
+                    </div>
+
+                    <?php if (!empty($error)): ?>
+                        <div class="alert alert-danger border-0 rounded-3 text-white py-2 small mb-4" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444 !important;">
+                            <i class="fa-solid fa-circle-exclamation me-1"></i> <?php echo htmlspecialchars($error); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($success)): ?>
+                        <div class="alert alert-success border-0 rounded-3 text-white py-3 small mb-4" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981 !important;">
+                            <i class="fa-solid fa-circle-check text-success me-1"></i> <?php echo htmlspecialchars($success); ?>
+                            <div class="mt-2">
+                                <a href="login.php" class="btn btn-sm btn-pulse-primary py-1 px-3">Go to Login &rarr;</a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Full Name / Organization</label>
+                            <input type="text" name="name" class="form-control pulse-input" placeholder="e.g. Sarah Jenkins" required>
                         </div>
 
-                        <?php if(!empty($error)): ?>
-                            <div class="alert alert-danger" style="background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; color: #ffcccc; border-radius: 10px;">
-                                <?php echo $error; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if(!empty($success)): ?>
-                            <div class="alert alert-success" style="background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; color: #ccffcc; border-radius: 10px;">
-                                <?php echo $success; ?> <a href="login.php" class="text-info fw-bold">Login Here</a>
-                            </div>
-                        <?php endif; ?>
-
-                        <form id="ai-register-form" method="POST" action="register.php">
-                            <div class="input-group-glass">
-                                <i class="fa-solid fa-user"></i>
-                                <input type="text" name="name" class="glass-input" placeholder="Full Name" required>
-                            </div>
-
-                            <div class="input-group-glass">
-                                <i class="fa-solid fa-envelope"></i>
-                                <input type="email" name="email" class="glass-input" placeholder="AI User ID / Email" required>
-                            </div>
-                            
-                            <div class="input-group-glass">
-                                <i class="fa-solid fa-lock"></i>
-                                <input type="password" name="password" class="glass-input" placeholder="Passkey" required>
-                            </div>
-
-                            <div class="input-group-glass">
-                                <i class="fa-solid fa-check-double"></i>
-                                <input type="password" name="confirm_password" class="glass-input" placeholder="Confirm Passkey" required>
-                            </div>
-                            
-                            <button type="submit" name="register" class="glow-btn">
-                                <i class="fa-solid fa-id-card"></i> Generate Identity
-                            </button>
-                        </form>
-                        
-                        <div class="form-footer">
-                            <span class="text-muted">Already have clearance?</span> <a href="login.php">Initialize Session</a>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">AI User ID (Email)</label>
+                            <input type="email" name="email" class="form-control pulse-input" placeholder="e.g. sarah@company.com" required>
                         </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Passkey</label>
+                                <input type="password" name="password" class="form-control pulse-input" placeholder="••••••••" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Confirm Passkey</label>
+                                <input type="password" name="confirm_password" class="form-control pulse-input" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" name="register" class="glow-btn mb-3">
+                            <i class="fa-solid fa-id-card me-1"></i> Initialize Identity
+                        </button>
+                    </form>
+
+                    <div class="text-center pt-2 text-secondary small">
+                        Already have clearance? <a href="login.php" class="text-info text-decoration-none fw-bold">Authenticate Session (Login)</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<script>
-document.getElementById('ai-register-form').addEventListener('submit', function() {
-    const btn = this.querySelector('.glow-btn');
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing Identity...';
-});
-</script>
+</section>
 
 <?php include('includes/footer.php'); ?>

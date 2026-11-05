@@ -1,328 +1,407 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Updated session check based on the new logic in login.php
-if(!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin'){
-    // Fallback to old admin session if exists, otherwise redirect
-    if(!isset($_SESSION['admin'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+    if (!isset($_SESSION['admin'])) {
         header("Location: ../login.php");
         exit();
     }
 }
 include('../config/db.php');
-?>
 
+// Fetch stats from DB
+$total_shipments = 0;
+$in_transit = 0;
+$total_users = 0;
+$pending_complaints = 0;
+
+$p_res = $conn->query("SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'In Transit' THEN 1 ELSE 0 END) AS in_transit FROM parcels");
+if ($p_res) {
+    $row = $p_res->fetch_assoc();
+    $total_shipments = $row['total'];
+    $in_transit = $row['in_transit'] ?: 0;
+}
+
+$u_res = $conn->query("SELECT COUNT(*) AS total FROM users");
+if ($u_res) {
+    $row = $u_res->fetch_assoc();
+    $total_users = $row['total'];
+}
+
+$c_res = $conn->query("SELECT COUNT(*) AS total FROM complaints WHERE status != 'Resolved'");
+if ($c_res) {
+    $row = $c_res->fetch_assoc();
+    $pending_complaints = $row['total'];
+}
+
+// Fetch recent parcels
+$recent_parcels = $conn->query("SELECT * FROM parcels ORDER BY created_at DESC LIMIT 6");
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parcel Pulse - AI Analytics Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parcel Pulse - AI Operations Dashboard</title>
 
-<!-- Fonts & Bootstrap -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fonts & Bootstrap -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-/* Dashboard Glassmorphism Styles */
-body {
-    background: linear-gradient(135deg, rgba(10,14,23,1), rgba(8,17,32,1)) fixed;
-    color: #fff;
-    font-family: 'Poppins', sans-serif;
-    overflow-x: hidden;
-}
-.sidebar {
-    position: fixed;
-    top: 0; left: 0;
-    width: 250px;
-    height: 100vh;
-    background: rgba(20, 25, 40, 0.7);
-    backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(0, 255, 255, 0.2);
-    padding: 20px 0;
-    z-index: 1000;
-}
-.sidebar-brand {
-    font-size: 1.5rem;
-    font-weight: 700;
-    text-align: center;
-    color: #fff;
-    margin-bottom: 30px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-.nav-link {
-    color: rgba(255,255,255,0.7);
-    padding: 15px 25px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    transition: 0.3s;
-    font-weight: 500;
-}
-.nav-link:hover, .nav-link.active {
-    color: #00ffff;
-    background: rgba(0, 255, 255, 0.1);
-    border-right: 3px solid #00ffff;
-}
-.main-content {
-    margin-left: 250px;
-    padding: 30px;
-}
-.glass-card {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.05);
-    transition: transform 0.3s;
-}
-.glass-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
-    border-color: rgba(0, 255, 255, 0.5);
-}
-.kpi-icon {
-    font-size: 2.5rem;
-    color: #00ffff;
-    background: rgba(0, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: 12px;
-}
-.table-glass {
-    color: #fff;
-}
-.table-glass th {
-    background: rgba(0, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(0,255,255,0.3);
-    color: #00ffff;
-}
-.table-glass td {
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
-}
-.table-glass tbody tr:hover td {
-    background: rgba(255,255,255,0.05);
-}
-</style>
+    <!-- Custom Modern Stylesheet -->
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/style.css'); ?>">
+
+    <style>
+    body {
+        background: #060b14;
+        color: #ffffff;
+        font-family: 'Poppins', sans-serif;
+        overflow-x: hidden;
+    }
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        width: 260px;
+        height: 100vh;
+        background: rgba(10, 17, 32, 0.95);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(0, 242, 254, 0.15);
+        padding: 24px 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .sidebar-brand {
+        font-size: 1.35rem;
+        font-weight: 700;
+        text-align: center;
+        color: #fff;
+        margin-bottom: 25px;
+        letter-spacing: 0.5px;
+    }
+    .nav-link-admin {
+        color: #ffffff !important;
+        padding: 13px 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.25s ease;
+        font-weight: 500;
+        font-size: 0.92rem;
+        text-decoration: none;
+    }
+    .nav-link-admin:hover, .nav-link-admin.active {
+        color: #00f2fe !important;
+        background: rgba(0, 242, 254, 0.08);
+        border-left: 3px solid #00f2fe;
+    }
+    .main-content {
+        margin-left: 260px;
+        padding: 35px;
+        min-height: 100vh;
+    }
+    .admin-card {
+        background: rgba(14, 23, 42, 0.7);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 242, 254, 0.2);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+    }
+    .admin-card:hover {
+        border-color: rgba(0, 242, 254, 0.4);
+        box-shadow: 0 0 25px rgba(0, 242, 254, 0.15);
+    }
+    .admin-card span,
+    .admin-card small,
+    .admin-card p {
+        color: #ffffff !important;
+    }
+    .table-dark-glass {
+        color: #ffffff;
+        width: 100%;
+    }
+    .table-dark-glass th {
+        background: rgba(0, 242, 254, 0.08);
+        color: #00f2fe;
+        border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+    }
+    .table-dark-glass td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        color: #ffffff !important;
+        padding: 12px 16px;
+        vertical-align: middle;
+        font-size: 0.88rem;
+    }
+    </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- SIDEBAR -->
 <div class="sidebar">
-    <div class="sidebar-brand">
-        <i class="fa-solid fa-satellite-dish text-info"></i> Pulse Admin
+    <div>
+        <div class="sidebar-brand d-flex align-items-center justify-content-center gap-2">
+            <span style="width: 8px; height: 8px; background: #00f2fe; border-radius: 50%; box-shadow: 0 0 10px #00f2fe;"></span>
+            <span>PULSE <span style="color: #00f2fe;">OPS</span></span>
+        </div>
+        <nav class="d-flex flex-column gap-1">
+            <a class="nav-link-admin active" href="dashboard.php">
+                <i class="fa-solid fa-chart-line text-info"></i> AI Analytics
+            </a>
+            <a class="nav-link-admin" href="shipment.php">
+                <i class="fa-solid fa-boxes-stacked"></i> Shipments Hub
+            </a>
+            <a class="nav-link-admin" href="complaints.php">
+                <i class="fa-solid fa-headset"></i> Support Tickets
+                <?php if ($pending_complaints > 0): ?>
+                    <span class="badge bg-warning text-dark ms-auto" style="font-size: 0.7rem;"><?php echo $pending_complaints; ?></span>
+                <?php endif; ?>
+            </a>
+            <a class="nav-link-admin" href="users.php">
+                <i class="fa-solid fa-users"></i> Access Control
+            </a>
+        </nav>
     </div>
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link active" href="dashboard.php"><i class="fa-solid fa-chart-pie"></i> AI Analytics</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="shipment.php"><i class="fa-solid fa-boxes-stacked"></i> Shipments</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#"><i class="fa-solid fa-drone"></i> Drone Monitor</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#"><i class="fa-solid fa-leaf"></i> Eco Reports</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#"><i class="fa-solid fa-user-shield"></i> Fraud Alerts</a>
-        </li>
-        <li class="nav-item mt-5">
-            <a class="nav-link text-danger" href="../logout.php"><i class="fa-solid fa-power-off"></i> Logout</a>
-        </li>
-    </ul>
+
+    <div>
+        <hr class="border-secondary opacity-25 mx-3 my-3">
+        <a class="nav-link-admin text-secondary" href="../index.php">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Public Site
+        </a>
+        <a class="nav-link-admin text-danger" href="../logout.php">
+            <i class="fa-solid fa-power-off"></i> Terminate Session
+        </a>
+    </div>
 </div>
 
-<!-- Main Content -->
+<!-- MAIN CONTENT -->
 <div class="main-content">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold m-0 text-light">Dashboard Overview</h2>
-            <p class="text-muted m-0">Real-time Logistics & AI Telemetry</p>
+            <h2 class="fw-bold text-white mb-1">AI Operations Console</h2>
+            <p class="text-secondary small mb-0">Autonomous fleet telemetry, freight throughput, and incident triage</p>
         </div>
-        <div>
-            <span class="badge bg-info text-dark p-2"><i class="fa-solid fa-circle text-danger fa-fade"></i> System Online</span>
-        </div>
-    </div>
-
-    <!-- KPI Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card d-flex align-items-center justify-content-between">
-                <div>
-                    <h6 class="text-muted">Total Revenue</h6>
-                    <h3 class="fw-bold m-0">$124,500</h3>
-                    <small class="text-success"><i class="fa-solid fa-arrow-trend-up"></i> +14% vs last month</small>
-                </div>
-                <i class="fa-solid fa-wallet kpi-icon"></i>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card d-flex align-items-center justify-content-between">
-                <div>
-                    <h6 class="text-muted">Active Shipments</h6>
-                    <h3 class="fw-bold m-0">1,430</h3>
-                    <small class="text-info"><i class="fa-solid fa-truck-fast"></i> 450 in transit</small>
-                </div>
-                <i class="fa-solid fa-box-open kpi-icon"></i>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card d-flex align-items-center justify-content-between">
-                <div>
-                    <h6 class="text-muted">AI Success Rate</h6>
-                    <h3 class="fw-bold m-0">99.8%</h3>
-                    <small class="text-success"><i class="fa-solid fa-check-circle"></i> Highly accurate</small>
-                </div>
-                <i class="fa-solid fa-brain kpi-icon"></i>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="glass-card d-flex align-items-center justify-content-between">
-                <div>
-                    <h6 class="text-muted">Carbon Saved</h6>
-                    <h3 class="fw-bold m-0">14.2t</h3>
-                    <small class="text-success"><i class="fa-solid fa-leaf"></i> Eco-routes active</small>
-                </div>
-                <i class="fa-solid fa-seedling kpi-icon text-success" style="background: rgba(40,167,69,0.1);"></i>
-            </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success px-3 py-2 rounded-pill font-monospace" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-satellite-dish me-1"></i> Core Operational
+            </span>
         </div>
     </div>
 
-    <!-- Charts Row -->
+    <!-- KPI TILES -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-6">
+            <div class="admin-card d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small text-uppercase">Total Consignments</span>
+                    <h3 class="fw-bold text-white mb-0 mt-1"><?php echo max($total_shipments, 3); ?></h3>
+                    <small class="text-info"><?php echo max($in_transit, 2); ?> currently in transit</small>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(0, 242, 254, 0.1); color: #00f2fe; font-size: 1.5rem;">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="admin-card d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small text-uppercase">Autonomous Drones</span>
+                    <h3 class="fw-bold text-white mb-0 mt-1" style="color: #00f2fe !important;">48 Active</h3>
+                    <small class="text-success"><i class="fa-solid fa-circle-check"></i> 100% Battery ready</small>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(0, 242, 254, 0.1); color: #00f2fe; font-size: 1.5rem;">
+                    <i class="fa-solid fa-plane-up"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="admin-card d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small text-uppercase">Registered Shippers</span>
+                    <h3 class="fw-bold text-white mb-0 mt-1"><?php echo max($total_users, 2); ?></h3>
+                    <small class="text-success">Verified enterprise keys</small>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 1.5rem;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="admin-card d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small text-uppercase">Open Support Tickets</span>
+                    <h3 class="fw-bold text-warning mb-0 mt-1"><?php echo $pending_complaints; ?></h3>
+                    <small class="text-secondary">Avg resolution: 1.8 hrs</small>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 1.5rem;">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW -->
     <div class="row g-4 mb-4">
         <div class="col-lg-8">
-            <div class="glass-card h-100">
-                <h5 class="mb-4">Revenue & Shipment Trends</h5>
-                <canvas id="revenueChart" height="100"></canvas>
+            <div class="admin-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-white mb-0">Monthly Freight Volume & Revenue Index</h6>
+                    <span class="badge-cyan small">Live AI Forecast</span>
+                </div>
+                <div style="height: 280px;">
+                    <canvas id="freightVolumeChart"></canvas>
+                </div>
             </div>
         </div>
-        <div class="col-lg-4">
-            <div class="glass-card h-100">
-                <h5 class="mb-4">AI Shipping Methods</h5>
-                <canvas id="methodChart"></canvas>
-            </div>
-        </div>
-    </div>
 
-    <!-- Data Table Row -->
-    <div class="row">
-        <div class="col-12">
-            <div class="glass-card">
-                <h5 class="mb-3">Recent AI Predictions & Alerts</h5>
-                <div class="table-responsive">
-                    <table class="table table-glass table-borderless align-middle">
-                        <thead>
-                            <tr>
-                                <th>Waybill ID</th>
-                                <th>Method</th>
-                                <th>ETA</th>
-                                <th>AI Insight / Alert</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>PP-8492-AI</td>
-                                <td><i class="fa-solid fa-drone text-info"></i> Drone</td>
-                                <td>14:00 Today</td>
-                                <td>Clear skies, optimal flight path.</td>
-                                <td><span class="badge bg-success">On Time</span></td>
-                            </tr>
-                            <tr>
-                                <td>PP-7742-AI</td>
-                                <td><i class="fa-solid fa-ship text-info"></i> Sea Freight</td>
-                                <td>24-May-2026</td>
-                                <td>Storm detected. Rerouted, +2 days delay.</td>
-                                <td><span class="badge bg-warning text-dark">Delayed</span></td>
-                            </tr>
-                            <tr>
-                                <td>PP-1092-AI</td>
-                                <td><i class="fa-solid fa-truck text-info"></i> EV Delivery</td>
-                                <td>18:30 Today</td>
-                                <td>Battery low on EV-04. Charging stop added.</td>
-                                <td><span class="badge bg-info">In Transit</span></td>
-                            </tr>
-                            <tr>
-                                <td>PP-9900-AI</td>
-                                <td><i class="fa-solid fa-plane text-info"></i> Air Freight</td>
-                                <td>-</td>
-                                <td><span class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Fake tracking detected.</span></td>
-                                <td><span class="badge bg-danger">Blocked</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <div class="col-lg-4">
+            <div class="admin-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-white mb-0">Modal Share Breakdown</h6>
+                    <span class="badge bg-secondary small">Fleet Distribution</span>
+                </div>
+                <div style="height: 280px; display: flex; align-items: center; justify-content: center;">
+                    <canvas id="modalShareChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- RECENT SHIPMENTS TABLE -->
+    <div class="admin-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-white mb-0">
+                <i class="fa-solid fa-satellite text-info me-2"></i> Recent Cargo Dispatches
+            </h5>
+            <a href="shipment.php" class="btn btn-sm btn-outline-info rounded-pill px-3">Manage All Shipments &rarr;</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-dark-glass">
+                <thead>
+                    <tr>
+                        <th>Waybill ID</th>
+                        <th>Sender / Consignee</th>
+                        <th>Origin / Destination</th>
+                        <th>Freight Mode</th>
+                        <th>Gross Weight</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($recent_parcels && $recent_parcels->num_rows > 0): ?>
+                        <?php while ($p = $recent_parcels->fetch_assoc()): ?>
+                            <?php
+                            $badge = 'bg-info text-dark';
+                            if ($p['status'] === 'Delivered') $badge = 'bg-success text-white';
+                            elseif ($p['status'] === 'Pending') $badge = 'bg-secondary text-white';
+                            ?>
+                            <tr>
+                                <td class="font-monospace fw-bold" style="color: #00f2fe;">
+                                    <?php echo htmlspecialchars($p['tracking_number']); ?>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-white"><?php echo htmlspecialchars($p['sender_name']); ?></div>
+                                    <small class="text-secondary">&rarr; <?php echo htmlspecialchars($p['receiver_name']); ?></small>
+                                </td>
+                                <td>
+                                    <div class="small text-white"><?php echo htmlspecialchars($p['origin']); ?></div>
+                                    <small class="text-secondary">&rarr; <?php echo htmlspecialchars($p['destination']); ?></small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-dark border border-secondary"><?php echo htmlspecialchars($p['shipping_method']); ?></span>
+                                </td>
+                                <td class="font-monospace"><?php echo htmlspecialchars($p['weight']); ?> kg</td>
+                                <td><span class="badge <?php echo $badge; ?> rounded-pill px-2 py-1"><?php echo htmlspecialchars($p['status']); ?></span></td>
+                                <td>
+                                    <a href="../pages/tracking.php?id=<?php echo urlencode($p['tracking_number']); ?>" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" title="Inspect Radar">
+                                        <i class="fa-solid fa-radar"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-secondary">No consignments found.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<!-- Chart.js Scripts -->
 <script>
-// Chart Global Config
-Chart.defaults.color = 'rgba(255,255,255,0.7)';
-Chart.defaults.font.family = "'Poppins', sans-serif";
+// Chart 1: Freight Volume Line Chart
+const ctxVol = document.getElementById('freightVolumeChart').getContext('2d');
+const gradient = ctxVol.createLinearGradient(0, 0, 0, 280);
+gradient.addColorStop(0, 'rgba(0, 242, 254, 0.4)');
+gradient.addColorStop(1, 'rgba(0, 242, 254, 0.0)');
 
-// Revenue Line Chart
-const ctxRev = document.getElementById('revenueChart').getContext('2d');
-new Chart(ctxRev, {
+new Chart(ctxVol, {
     type: 'line',
     data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
         datasets: [{
-            label: 'Revenue ($)',
-            data: [65000, 72000, 80000, 85000, 105000, 124500],
-            borderColor: '#00ffff',
-            backgroundColor: 'rgba(0, 255, 255, 0.1)',
+            label: 'Consignment Volume ($k)',
+            data: [65, 72, 80, 85, 94, 105, 112, 118, 125, 134, 142],
+            borderColor: '#00f2fe',
             borderWidth: 3,
+            backgroundColor: gradient,
+            fill: true,
             tension: 0.4,
-            fill: true
+            pointBackgroundColor: '#00f2fe',
+            pointRadius: 4
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-            y: { grid: { color: 'rgba(255,255,255,0.05)' } },
-            x: { grid: { display: false } }
+            x: { grid: { color: 'rgba(255, 255, 255, 0.08)' }, ticks: { color: '#ffffff' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.08)' }, ticks: { color: '#ffffff' } }
         }
     }
 });
 
-// Shipping Method Doughnut Chart
-const ctxMethod = document.getElementById('methodChart').getContext('2d');
-new Chart(ctxMethod, {
+// Chart 2: Modal Share Donut Chart
+const ctxModal = document.getElementById('modalShareChart').getContext('2d');
+new Chart(ctxModal, {
     type: 'doughnut',
     data: {
-        labels: ['EV Truck', 'Drone', 'Air', 'Sea', 'Crowd'],
+        labels: ['Air Freight', 'Autonomous Drone', 'Ocean Bulk', 'Overland EV'],
         datasets: [{
-            data: [45, 20, 15, 10, 10],
-            backgroundColor: [
-                '#00ffff', '#3a7bd5', '#ff0055', '#28a745', '#ffc107'
-            ],
-            borderWidth: 0,
-            hoverOffset: 10
+            data: [42, 25, 20, 13],
+            backgroundColor: ['#00f2fe', '#10b981', '#8b5cf6', '#f59e0b'],
+            borderColor: '#060b14',
+            borderWidth: 2
         }]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-            legend: { position: 'bottom' }
-        },
-        cutout: '75%'
+            legend: { position: 'bottom', labels: { color: '#ffffff', font: { size: 11, weight: 'bold' } } }
+        }
     }
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

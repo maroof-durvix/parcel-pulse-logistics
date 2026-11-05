@@ -1,431 +1,395 @@
-<?php include('../includes/header.php'); ?>
-<?php include('../config/db.php'); ?>
+<?php 
+include('../includes/header.php'); 
+include('../config/db.php'); 
+
+$query_id = isset($_GET['id']) ? trim($_GET['id']) : 'PP-8492-AI';
+$parcel = null;
+$history = [];
+$prediction = null;
+
+if (!empty($query_id)) {
+    $clean_id = $conn->real_escape_string($query_id);
+    $res = $conn->query("SELECT * FROM parcels WHERE tracking_number = '$clean_id'");
+    if ($res && $res->num_rows > 0) {
+        $parcel = $res->fetch_assoc();
+        $p_id = (int)$parcel['id'];
+        
+        // Get history
+        $h_res = $conn->query("SELECT * FROM tracking_history WHERE parcel_id = $p_id ORDER BY timestamp DESC");
+        while ($row = $h_res->fetch_assoc()) {
+            $history[] = $row;
+        }
+
+        // Get AI prediction
+        $pred_res = $conn->query("SELECT * FROM ai_predictions WHERE parcel_id = $p_id LIMIT 1");
+        if ($pred_res && $pred_res->num_rows > 0) {
+            $prediction = $pred_res->fetch_assoc();
+        }
+    }
+}
+
+// Fallback mock if not in DB so testing any ID works seamlessly
+if (!$parcel) {
+    $parcel = [
+        'tracking_number' => !empty($query_id) ? htmlspecialchars($query_id) : 'PP-8492-AI',
+        'sender_name' => 'Dubai Freight Hub #4',
+        'receiver_name' => 'Ahmed Durwesh',
+        'origin' => 'Dubai International Logistics Hub (DXB)',
+        'destination' => 'Lahore Central Fulfillment Node (LHE)',
+        'shipping_method' => 'Air',
+        'status' => 'In Transit',
+        'weight' => '2.50',
+        'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+    ];
+    $prediction = [
+        'delay_probability' => 4,
+        'weather_impact' => 'Clear Sky - Optimal Jetstream Vector',
+        'recommended_route' => 'DXB -> KHI -> LHE Corridor'
+    ];
+    $history = [
+        ['location' => 'LHE Sorting Facility', 'status' => 'Customs Cleared & In Transit', 'timestamp' => date('Y-m-d H:i:s', strtotime('-3 hours'))],
+        ['location' => 'DXB Air Cargo Terminal', 'status' => 'Departed from Origin', 'timestamp' => date('Y-m-d H:i:s', strtotime('-18 hours'))],
+        ['location' => 'Dubai Logistics Center', 'status' => 'Shipment Manifest Created', 'timestamp' => date('Y-m-d H:i:s', strtotime('-24 hours'))]
+    ];
+}
+?>
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
-/* AI Tracking Page Styles */
-.tracking-hero {
-    position: relative;
-    padding: 120px 0 60px;
-    background: url('../assets/img/tracking_bg.jpg') no-repeat center center/cover;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+/* Dark Inverted Leaflet Map */
+#live-map {
+    height: 380px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(0, 242, 254, 0.25);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 1;
 }
-.tracking-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(180deg, rgba(10,14,23,0.85) 0%, rgba(10,14,23,1) 100%);
+#live-map .leaflet-tile {
+    filter: brightness(0.65) invert(1) contrast(2.5) hue-rotate(200deg) saturate(0.25);
 }
-.content-wrapper {
-    position: relative;
-    z-index: 2;
-}
-.tracking-glass-box {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
-}
+
 .voice-btn {
-    background: rgba(0, 255, 255, 0.1);
-    border: 1px solid #00ffff;
-    color: #00ffff;
+    width: 58px;
+    height: 58px;
+    background: rgba(0, 242, 254, 0.08);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
+    display: inline-flex;
     align-items: center;
-    font-size: 1.5rem;
+    justify-content: center;
+    font-size: 1.4rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 0 auto 20px;
+    transition: var(--transition);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
 .voice-btn:hover, .voice-btn.recording {
-    background: #00ffff;
+    background: var(--cyan);
     color: #000;
-    box-shadow: 0 0 20px #00ffff;
+    box-shadow: 0 0 30px var(--cyan);
 }
 .voice-btn.recording {
-    animation: pulseMic 1.5s infinite;
+    animation: micPulse 1.2s infinite;
 }
-@keyframes pulseMic {
-    0% { transform: scale(1); box-shadow: 0 0 10px #00ffff; }
-    50% { transform: scale(1.1); box-shadow: 0 0 25px #00ffff; }
-    100% { transform: scale(1); box-shadow: 0 0 10px #00ffff; }
-}
-.tracking-input {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    color: #fff;
-    border-radius: 50px;
-    padding: 15px 25px;
-    text-align: center;
-    font-size: 1.2rem;
-    letter-spacing: 2px;
-}
-.tracking-input:focus {
-    background: rgba(0,0,0,0.7);
-    border-color: #00ffff;
-    color: #fff;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-}
-.glow-btn {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    border: none;
-    color: white;
-    font-weight: bold;
-    border-radius: 50px;
-    padding: 12px 30px;
-    width: 100%;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    transition: all 0.3s ease;
-}
-.glow-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.9);
-    transform: translateY(-2px);
+@keyframes micPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); box-shadow: 0 0 35px var(--cyan); }
 }
 
-/* AI Status Display */
-.ai-status-panel {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(0,255,255,0.2);
-    border-radius: 15px;
-    padding: 25px;
-    margin-top: 30px;
+.timeline-step {
+    position: relative;
+    padding-left: 32px;
+    margin-bottom: 24px;
+}
+.timeline-step::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 24px;
+    bottom: -16px;
+    width: 2px;
+    background: rgba(0, 242, 254, 0.25);
+}
+.timeline-step:last-child::before {
     display: none;
 }
-.ai-prediction-box {
-    background: rgba(0, 255, 255, 0.05);
-    border-left: 4px solid #00ffff;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-}
-.route-progress {
-    position: relative;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    margin: 40px 0 20px;
-    border-radius: 2px;
-}
-.route-progress-bar {
+.timeline-dot {
     position: absolute;
-    top: 0; left: 0; height: 100%;
-    background: #00ffff;
-    box-shadow: 0 0 10px #00ffff;
-    width: 0%;
-    transition: width 2s ease-in-out;
-}
-.route-node {
-    position: absolute;
-    top: -8px;
-    width: 20px; height: 20px;
-    background: #081120;
-    border: 3px solid rgba(255,255,255,0.2);
+    left: 0;
+    top: 4px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    transition: all 0.5s;
+    background: #0f172a;
+    border: 2px solid var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
 }
-.route-node.active {
-    border-color: #00ffff;
-    box-shadow: 0 0 10px #00ffff;
-    background: #00ffff;
-}
-.route-label {
-    position: absolute;
-    top: 20px;
-    transform: translateX(-50%);
-    font-size: 0.8rem;
-    color: #ccc;
-    white-space: nowrap;
-}
-
-/* Map Styling */
-#live-map {
-    height: 350px;
-    border-radius: 10px;
-    margin-top: 25px;
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-    z-index: 1; /* Keep map behind modals but visible */
+.timeline-step.completed .timeline-dot {
+    background: var(--cyan);
 }
 </style>
 
-<div class="tracking-hero text-light">
-    <div class="container content-wrapper">
-        
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold"><i class="fa-solid fa-satellite text-info"></i> AI Parcel Tracker</h1>
-            <p class="lead text-muted">Real-time predictive tracking & live map simulation</p>
-        </div>
+<!-- TRACKING PAGE HERO -->
+<section class="page-hero hero-tracking">
+    <div class="container text-center">
+        <span class="badge-cyan mb-2 d-inline-block"><i class="fa-solid fa-satellite text-info me-1"></i> Multi-Constellation GPS Telemetry</span>
+        <h1 class="hero-title-gradient">AI Waybill Radar</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 600px;">
+            Real-time orbital tracking, meteorological delay predictions, and live coordinate mapping.
+        </p>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="tracking-glass-box text-center">
-                    
-                    <p class="text-info mb-4">Click the mic and say <strong>"Track my parcel"</strong> or type your Waybill ID</p>
-                    
-                    <div class="voice-btn" id="voiceBtn" title="Voice Tracking">
-                        <i class="fa-solid fa-microphone"></i>
+        <!-- Search Bar -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-7 col-md-9">
+                <div class="glass-box text-center p-4">
+                    <p class="text-secondary small mb-3">
+                        Tap the mic and speak <strong class="text-info">"Track my parcel"</strong> or enter your Waybill number:
+                    </p>
+
+                    <div class="mb-3">
+                        <div class="voice-btn" id="voiceBtn" title="Voice Recognition">
+                            <i class="fa-solid fa-microphone"></i>
+                        </div>
+                        <p id="voice-status" class="text-muted small mt-2 mb-0" style="min-height: 20px;"></p>
                     </div>
-                    
-                    <p id="voice-status" class="text-muted small" style="height: 20px;"></p>
 
-                    <form id="ai-track-form">
-                        <div class="row gx-2">
-                            <div class="col-md-8 mb-3 mb-md-0">
-                                <input type="text" id="trackingNumber" class="form-control tracking-input w-100" placeholder="e.g. PP-8492-AI" required>
+                    <form action="tracking.php" method="GET" id="trackingForm">
+                        <div class="row g-2">
+                            <div class="col-md-8">
+                                <input type="text" name="id" id="trackingInput" class="form-control pulse-input auto-waybill text-center fw-bold" placeholder="e.g. PP-8492-AI" value="<?php echo htmlspecialchars($parcel['tracking_number']); ?>" required style="letter-spacing: 2px; font-size: 1.15rem;">
                             </div>
                             <div class="col-md-4">
-                                <button type="submit" class="glow-btn m-0 w-100" style="padding: 15px;">
-                                    <i class="fa-solid fa-radar"></i> Track
+                                <button type="submit" class="glow-btn py-3">
+                                    <i class="fa-solid fa-crosshairs me-1"></i> Scan Radar
                                 </button>
                             </div>
                         </div>
                     </form>
 
-                    <!-- AI Processing & Results -->
-                    <div id="ai-processing" class="mt-4" style="display:none;">
-                        <i class="fa-solid fa-circle-notch fa-spin text-info" style="font-size: 2rem;"></i>
-                        <p class="mt-2 text-info">AI Querying Global Database...</p>
+                    <div class="d-flex justify-content-center gap-2 mt-3 small">
+                        <span class="text-secondary">Quick Lookups:</span>
+                        <a href="tracking.php?id=PP-8492-AI" class="text-info text-decoration-none">PP-8492-AI</a> &bull;
+                        <a href="tracking.php?id=PP-7742-AI" class="text-info text-decoration-none">PP-7742-AI</a> &bull;
+                        <a href="tracking.php?id=PP-3391-RD" class="text-info text-decoration-none">PP-3391-RD</a>
                     </div>
-
-                    <div class="ai-status-panel text-start" id="ai-result-panel">
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="ai-prediction-box h-100 mb-md-0">
-                                    <h5 class="text-info mb-1"><i class="fa-solid fa-brain"></i> AI Insights</h5>
-                                    <p class="mb-0 small" id="ai-prediction-text"></p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex flex-column justify-content-center h-100 text-md-end mt-3 mt-md-0">
-                                    <div>
-                                        <small class="text-muted">Waybill ID:</small> <span id="res-id" class="text-light fw-bold ms-2"></span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <small class="text-muted">Status:</small> <span id="res-status" class="badge bg-info ms-2"></span>
-                                    </div>
-                                    <div class="mt-2">
-                                        <small class="text-muted">Method:</small> <span class="badge bg-secondary ms-2" id="res-method"><i class="fa-solid fa-truck-fast"></i> Autonomous EV</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Animated Route Bar -->
-                        <div class="route-progress">
-                            <div class="route-progress-bar" id="routeBar"></div>
-                            
-                            <div class="route-node active" style="left: 0%;">
-                                <div class="route-label">Dispatched</div>
-                            </div>
-                            <div class="route-node" id="node-transit" style="left: 50%;">
-                                <div class="route-label">In Transit</div>
-                            </div>
-                            <div class="route-node" id="node-delivered" style="left: 100%;">
-                                <div class="route-label">Delivered</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Leaflet Map Container -->
-                        <div id="live-map"></div>
-
-                        <div class="mt-4 text-center">
-                            <p class="text-muted small mb-0"><i class="fa-solid fa-shield-halved"></i> Secured by Pulse AI Blockchain</p>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</section>
+
+<!-- TRACKING DETAILS & MAP -->
+<section class="py-5" style="background: var(--bg-main);">
+    <div class="container">
+        <div class="row g-4">
+            <!-- Left Telemetry & Status Cards -->
+            <div class="col-lg-5">
+                <div class="pulse-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span class="text-secondary small text-uppercase">Tracking Manifest</span>
+                            <h4 class="fw-bold text-white mb-0" style="letter-spacing: 1px; color: var(--cyan) !important;">
+                                <?php echo htmlspecialchars($parcel['tracking_number']); ?>
+                            </h4>
+                        </div>
+                        <span class="badge bg-success px-3 py-2 rounded-pill font-monospace" style="font-size: 0.85rem;">
+                            <i class="fa-solid fa-circle-dot fa-fade me-1"></i> <?php echo htmlspecialchars($parcel['status']); ?>
+                        </span>
+                    </div>
+
+                    <hr class="border-secondary opacity-25 my-3">
+
+                    <div class="row g-3 small">
+                        <div class="col-6">
+                            <span class="text-secondary">Carrier Mode:</span>
+                            <div class="fw-semibold text-white mt-1">
+                                <i class="fa-solid fa-plane text-info me-1"></i> <?php echo htmlspecialchars($parcel['shipping_method']); ?> Freight
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-secondary">Gross Weight:</span>
+                            <div class="fw-semibold text-white mt-1">
+                                <i class="fa-solid fa-weight-hanging text-info me-1"></i> <?php echo htmlspecialchars($parcel['weight']); ?> kg
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-secondary">Origin Hub:</span>
+                            <div class="fw-semibold text-white mt-1">
+                                <i class="fa-solid fa-location-arrow text-info me-1"></i> <?php echo htmlspecialchars($parcel['origin']); ?>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-secondary">Destination Hub:</span>
+                            <div class="fw-semibold text-white mt-1">
+                                <i class="fa-solid fa-location-dot text-danger me-1"></i> <?php echo htmlspecialchars($parcel['destination']); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Neural Prediction Box -->
+                <div class="pulse-card">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-brain text-info fs-5"></i>
+                        <h6 class="text-white fw-bold mb-0">AI Delay & Route Prediction</h6>
+                    </div>
+
+                    <div class="p-3 rounded-3 mb-3" style="background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.2);">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small text-secondary">Delay Probability:</span>
+                            <span class="badge bg-success"><?php echo $prediction ? $prediction['delay_probability'] : 4; ?>% (Ultra Low Risk)</span>
+                        </div>
+                        <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1);">
+                            <div class="progress-bar bg-info" style="width: <?php echo $prediction ? $prediction['delay_probability'] : 4; ?>%;"></div>
+                        </div>
+                    </div>
+
+                    <p class="small text-secondary mb-2">
+                        <i class="fa-solid fa-cloud-sun text-warning me-1"></i> <strong>Atmospheric Conditions:</strong> <?php echo $prediction ? htmlspecialchars($prediction['weather_impact']) : 'Clear Skies'; ?>
+                    </p>
+                    <p class="small text-secondary mb-0">
+                        <i class="fa-solid fa-route text-success me-1"></i> <strong>AI Recommended Corridor:</strong> <?php echo $prediction ? htmlspecialchars($prediction['recommended_route']) : 'Optimal Direct Flight Corridor'; ?>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right: Interactive Leaflet Map & Timeline -->
+            <div class="col-lg-7">
+                <div class="pulse-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-earth-asia text-info"></i>
+                            <h5 class="text-white fw-bold mb-0">Orbital GPS Map Simulation</h5>
+                        </div>
+                        <span class="small text-secondary font-monospace"><i class="fa-solid fa-circle text-success me-1" style="font-size:0.6rem;"></i> Live Signal</span>
+                    </div>
+
+                    <!-- Live Dark Map Container -->
+                    <div id="live-map"></div>
+                </div>
+
+                <!-- Live Waybill Timeline -->
+                <div class="pulse-card">
+                    <h5 class="text-white fw-bold mb-4">
+                        <i class="fa-solid fa-clock-rotate-left text-info me-2"></i> Real-Time Waybill History
+                    </h5>
+
+                    <div class="timeline">
+                        <?php foreach ($history as $index => $item): ?>
+                            <div class="timeline-step <?php echo $index === 0 ? 'completed' : ''; ?>">
+                                <div class="timeline-dot"></div>
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <h6 class="text-white fw-semibold mb-1"><?php echo htmlspecialchars($item['status']); ?></h6>
+                                    <span class="text-secondary small font-monospace"><?php echo date('M d, H:i', strtotime($item['timestamp'])); ?></span>
+                                </div>
+                                <p class="text-secondary small mb-0"><i class="fa-solid fa-map-pin text-info me-1"></i> <?php echo htmlspecialchars($item['location']); ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-let map;
-let marker;
-let routeLine;
-let animationTimeout;
+// Initialize Leaflet Map with Dark styling
+document.addEventListener('DOMContentLoaded', function() {
+    const map = L.map('live-map').setView([25.2048, 55.2708], 5);
 
-function initMap() {
-    // Check if map is already initialized
-    if (map) return;
-    
-    // Initialize the map with dark theme
-    map = L.map('live-map').setView([31.5204, 74.3587], 6); // Default view (Lahore, PK)
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>'
+    // Free OpenStreetMap tiles with custom CSS dark invert (NO WATERMARK, NO API KEY)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-}
 
-function animateMarker(startPoint, endPoint, progressPercent) {
-    if (marker) map.removeLayer(marker);
-    if (routeLine) map.removeLayer(routeLine);
-    clearTimeout(animationTimeout);
+    // Coordinates: Dubai (Origin) to Lahore (Destination)
+    const origin = [25.2048, 55.2708]; // Dubai
+    const transit = [24.8607, 67.0011]; // Karachi
+    const destination = [31.5204, 74.3587]; // Lahore
 
-    // Draw route
-    const latlngs = [startPoint, endPoint];
-    routeLine = L.polyline(latlngs, {color: '#00ffff', weight: 3, dashArray: '10, 10'}).addTo(map);
-    map.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+    // Route polyline
+    const routeCoords = [origin, transit, destination];
+    const polyline = L.polyline(routeCoords, {
+        color: '#00f2fe',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: '6, 8'
+    }).addTo(map);
 
-    // Custom glowing icon
-    const icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: "<div style='background-color:#00ffff;width:15px;height:15px;border-radius:50%;box-shadow:0 0 15px #00ffff, 0 0 30px #00ffff;'></div>",
-        iconSize: [15, 15],
-        iconAnchor: [7.5, 7.5]
-    });
+    // Pulse Origin & Dest markers
+    const originMarker = L.circleMarker(origin, {
+        radius: 7,
+        fillColor: '#00f2fe',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map).bindPopup("<b>Origin:</b> Dubai Logistics Center");
 
-    // If 100% delivered, just put marker at end
-    if (progressPercent >= 100) {
-        marker = L.marker(endPoint, {icon: icon}).addTo(map);
-        return;
+    const destMarker = L.circleMarker(destination, {
+        radius: 7,
+        fillColor: '#ef4444',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map).bindPopup("<b>Destination:</b> Lahore Central Node");
+
+    // Live In-Transit Marker
+    const transitMarker = L.circleMarker(transit, {
+        radius: 9,
+        fillColor: '#10b981',
+        color: '#ffffff',
+        weight: 3,
+        opacity: 1,
+        fillOpacity: 0.9
+    }).addTo(map).bindPopup("<b>Live Position:</b> In Transit (Cleared Customs)");
+
+    map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+
+    // Voice recognition for Track my parcel
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voice-status');
+    const trackingInput = document.getElementById('trackingInput');
+    const trackingForm = document.getElementById('trackingForm');
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec && voiceBtn) {
+        const recognition = new SpeechRec();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+
+        voiceBtn.addEventListener('click', () => {
+            voiceBtn.classList.add('recording');
+            voiceStatus.innerText = "Listening... say 'Track my parcel'";
+            recognition.start();
+        });
+
+        recognition.onresult = (event) => {
+            voiceBtn.classList.remove('recording');
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            voiceStatus.innerText = `Heard: "${transcript}"`;
+            
+            if (transcript.includes('track') || transcript.includes('parcel')) {
+                trackingInput.value = 'PP-8492-AI';
+                setTimeout(() => trackingForm.submit(), 600);
+            }
+        };
+
+        recognition.onerror = () => {
+            voiceBtn.classList.remove('recording');
+            voiceStatus.innerText = "Voice not captured. Please type manually.";
+        };
+    } else if (voiceBtn) {
+        voiceBtn.style.display = 'none';
     }
-
-    // Calculate current position based on progress
-    const latDiff = endPoint[0] - startPoint[0];
-    const lngDiff = endPoint[1] - startPoint[1];
-    
-    const currentLat = startPoint[0] + (latDiff * (progressPercent / 100));
-    const currentLng = startPoint[1] + (lngDiff * (progressPercent / 100));
-    
-    marker = L.marker([startPoint[0], startPoint[1]], {icon: icon}).addTo(map);
-
-    // Animate marker from start to current position
-    let step = 0;
-    const totalSteps = 60; // Smoothness
-    
-    function move() {
-        step++;
-        const targetProgress = (progressPercent / 100) * (step / totalSteps);
-        const nextLat = startPoint[0] + (latDiff * targetProgress);
-        const nextLng = startPoint[1] + (lngDiff * targetProgress);
-        
-        marker.setLatLng([nextLat, nextLng]);
-
-        if (step < totalSteps) {
-            animationTimeout = setTimeout(move, 50); // Speed
-        }
-    }
-    move();
-}
-
-// Voice Tracking Implementation
-const voiceBtn = document.getElementById('voiceBtn');
-const voiceStatus = document.getElementById('voice-status');
-const trackingInput = document.getElementById('trackingNumber');
-const trackForm = document.getElementById('ai-track-form');
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-
-    voiceBtn.addEventListener('click', () => {
-        voiceBtn.classList.add('recording');
-        voiceStatus.innerText = "Listening... say 'Track my parcel'";
-        recognition.start();
-    });
-
-    recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        voiceBtn.classList.remove('recording');
-        voiceStatus.innerText = `Heard: "${transcript}"`;
-        
-        if (transcript.includes('track')) {
-            trackingInput.value = 'PP-7742-AI';
-            setTimeout(() => {
-                trackForm.dispatchEvent(new Event('submit'));
-            }, 1000);
-        } else {
-            voiceStatus.innerText = "Command not recognized. Try again.";
-        }
-    };
-
-    recognition.onerror = function(event) {
-        voiceBtn.classList.remove('recording');
-        voiceStatus.innerText = "Error recognizing voice.";
-    };
-} else {
-    voiceBtn.style.display = 'none';
-    voiceStatus.innerText = "Voice Tracking not supported.";
-}
-
-// Form Submission & AI Animation
-trackForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    document.getElementById('ai-result-panel').style.display = 'none';
-    document.getElementById('ai-processing').style.display = 'block';
-    
-    document.getElementById('routeBar').style.width = '0%';
-    document.getElementById('node-transit').classList.remove('active');
-    document.getElementById('node-delivered').classList.remove('active');
-
-    setTimeout(() => {
-        document.getElementById('ai-processing').style.display = 'none';
-        document.getElementById('ai-result-panel').style.display = 'block';
-        
-        initMap(); // Ensure map is initialized
-
-        const trackId = trackingInput.value;
-        document.getElementById('res-id').innerText = trackId;
-        
-        let statusText = "In Transit";
-        let prediction = "Your parcel is currently passing through the Islamabad AI Hub. Expected delivery is tomorrow by 14:00. Weather conditions are optimal.";
-        let progressVal = 60; // 60%
-        let method = '<i class="fa-solid fa-truck-fast"></i> Autonomous EV';
-        
-        // Define coordinates: [Start(Karachi), End(Islamabad)]
-        let startCoord = [24.8607, 67.0011];
-        let endCoord = [33.6844, 73.0479];
-
-        if (trackId.endsWith('8')) {
-            statusText = "Delivered";
-            prediction = "Parcel was successfully delivered via AI Drone at 09:30 AM.";
-            progressVal = 100;
-            method = '<i class="fa-solid fa-plane-up"></i> AI Drone';
-            document.getElementById('node-transit').classList.add('active');
-            document.getElementById('node-delivered').classList.add('active');
-            document.getElementById('res-status').className = 'badge bg-success ms-2';
-        } else if (trackId.endsWith('9')) {
-            statusText = "Delayed";
-            prediction = "AI predicts a delay due to storm clouds. Drone grounded. Rerouting via Ground Transport.";
-            progressVal = 30;
-            method = '<i class="fa-solid fa-ship"></i> Sea Freight';
-            document.getElementById('res-status').className = 'badge bg-warning text-dark ms-2';
-            startCoord = [24.8607, 67.0011];
-            endCoord = [25.3960, 68.3578]; // Hyderabad
-        } else {
-            document.getElementById('node-transit').classList.add('active');
-            document.getElementById('res-status').className = 'badge bg-info ms-2';
-        }
-        
-        document.getElementById('res-status').innerText = statusText;
-        document.getElementById('res-method').innerHTML = method;
-        document.getElementById('ai-prediction-text').innerText = prediction;
-        
-        // Animate Bar and Map
-        setTimeout(() => {
-            document.getElementById('routeBar').style.width = progressVal + '%';
-            map.invalidateSize(); // Fix leafet container sizing issue
-            animateMarker(startCoord, endCoord, progressVal);
-        }, 100);
-        
-    }, 1500); 
 });
 </script>
 

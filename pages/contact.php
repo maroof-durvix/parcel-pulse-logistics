@@ -1,296 +1,128 @@
 <?php include('../includes/header.php'); ?>
 
-<style>
-/* Smart Support Glassmorphism */
-.contact-hero {
-    position: relative;
-    padding: 120px 0 80px;
-    background: url('../assets/img/contact_bg.jpg') no-repeat center center/cover;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-}
-.contact-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(10,14,23,0.95) 0%, rgba(8,17,32,0.9) 100%);
-}
-.contact-content {
-    position: relative;
-    z-index: 2;
-}
-.chat-interface {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
-    display: flex;
-    flex-direction: column;
-    height: 600px;
-}
-.chat-header {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-.ai-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    color: white;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    animation: pulseAvatar 2s infinite;
-}
-@keyframes pulseAvatar {
-    0% { box-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
-    50% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.8); }
-    100% { box-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
-}
-.chat-body {
-    flex-grow: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.chat-bubble {
-    max-width: 80%;
-    padding: 15px;
-    border-radius: 15px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-}
-.ai-bubble {
-    background: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-bottom-left-radius: 0;
-    align-self: flex-start;
-}
-.user-bubble {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    color: white;
-    border-bottom-right-radius: 0;
-    align-self: flex-end;
-}
-.chat-footer {
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    border-top: 1px solid rgba(0, 255, 255, 0.2);
-    display: flex;
-    gap: 10px;
-}
-.chat-input {
-    flex-grow: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50px;
-    padding: 12px 20px;
-    color: white;
-    outline: none;
-    transition: all 0.3s;
-}
-.chat-input:focus {
-    border-color: #00ffff;
-    background: rgba(0, 0, 0, 0.5);
-}
-.chat-send-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #00ffff;
-    color: #000;
-    border: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.chat-send-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 15px #00ffff;
-}
-.typing-indicator {
-    display: flex;
-    gap: 5px;
-    padding: 10px 15px;
-    background: rgba(0, 255, 255, 0.05);
-    border-radius: 15px;
-    width: fit-content;
-    display: none;
-}
-.typing-dot {
-    width: 8px;
-    height: 8px;
-    background: #00ffff;
-    border-radius: 50%;
-    animation: typing 1.4s infinite ease-in-out;
-}
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
-@keyframes typing {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
-}
+<!-- CONTACT HERO -->
+<section class="page-hero hero-contact">
+    <div class="container text-center">
+        <span class="badge-cyan mb-2 d-inline-block"><i class="fa-solid fa-headset me-1"></i> Global Operations Hubs</span>
+        <h1 class="hero-title-gradient">Contact Our Global Logistics Core</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 650px;">
+            Connect with our enterprise solutions team, regional hub dispatchers, or automated AI triage network 24/7.
+        </p>
+    </div>
+</section>
 
-.contact-info-card {
-    background: rgba(20, 25, 40, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    transition: 0.3s;
-}
-.contact-info-card:hover {
-    border-color: #00ffff;
-    background: rgba(0, 255, 255, 0.05);
-}
-.contact-icon {
-    font-size: 2rem;
-    color: #00ffff;
-}
-</style>
-
-<div class="contact-hero">
-    <div class="container contact-content">
+<!-- CONTACT SECTION -->
+<section class="py-5" style="background: var(--bg-main);">
+    <div class="container">
         <div class="row g-5">
-            
+            <!-- Left Info & Hubs -->
             <div class="col-lg-5">
-                <h1 class="display-4 fw-bold text-light mb-4">
-                    <span style="color: #00ffff;">AI Support</span> Center
-                </h1>
-                <p class="text-muted mb-5">
-                    Connect with our intelligent virtual assistant for instant resolutions, or reach out to our human hubs globally.
-                </p>
-                
-                <div class="contact-info-card">
-                    <i class="fa-solid fa-headset contact-icon"></i>
-                    <div>
-                        <h5 class="mb-1 text-light">Global Hotlines</h5>
-                        <p class="text-muted mb-0">+1 (800) 123-PULSE</p>
+                <span class="badge-cyan mb-2 d-inline-block">24/7 Connectivity</span>
+                <h3 class="fw-bold text-white mb-4">Regional Logistics Nodes</h3>
+
+                <div class="d-flex flex-column gap-3 mb-4">
+                    <div class="p-3 rounded-3" style="background: rgba(6, 11, 20, 0.85); border: 1px solid rgba(0, 242, 254, 0.2);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="p-3 rounded-circle" style="background: rgba(0, 242, 254, 0.1); color: var(--cyan);"><i class="fa-solid fa-phone"></i></div>
+                            <div>
+                                <small class="text-secondary text-uppercase">Enterprise Support</small>
+                                <h6 class="text-white fw-bold mb-0">+92 21 111-PULSE (78573)</h6>
+                                <small class="text-info">Toll-free 24/7</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="contact-info-card">
-                    <i class="fa-solid fa-envelope-open-text contact-icon"></i>
-                    <div>
-                        <h5 class="mb-1 text-light">AI Email Routing</h5>
-                        <p class="text-muted mb-0">support@parcelpulse.ai</p>
+
+                    <div class="p-3 rounded-3" style="background: rgba(6, 11, 20, 0.85); border: 1px solid rgba(0, 242, 254, 0.2);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="p-3 rounded-circle" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fa-solid fa-envelope"></i></div>
+                            <div>
+                                <small class="text-secondary text-uppercase">AI Inbound Dispatch</small>
+                                <h6 class="text-white fw-bold mb-0">operations@parcelpulse.io</h6>
+                                <small class="text-success">< 15 mins typical triage</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="contact-info-card">
-                    <i class="fa-solid fa-location-dot contact-icon"></i>
-                    <div>
-                        <h5 class="mb-1 text-light">HQ Coordinate</h5>
-                        <p class="text-muted mb-0">Silicon Valley, CA 94025</p>
+
+                    <div class="p-3 rounded-3" style="background: rgba(6, 11, 20, 0.85); border: 1px solid rgba(0, 242, 254, 0.2);">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="p-3 rounded-circle" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fa-solid fa-location-dot"></i></div>
+                            <div>
+                                <small class="text-secondary text-uppercase">Primary Hub Coordinates</small>
+                                <h6 class="text-white fw-bold mb-0">DHA Phase 6, Karachi, PK</h6>
+                                <small class="text-secondary">Connected with Dubai (DXB) Node</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Right Message Form -->
             <div class="col-lg-7">
-                <div class="chat-interface">
-                    <div class="chat-header">
-                        <div class="ai-avatar">
-                            <i class="fa-solid fa-robot"></i>
+                <div class="pulse-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-envelope-open-text text-info fs-5"></i>
+                            <h4 class="fw-bold text-white mb-0">Direct Enterprise Inquiry</h4>
                         </div>
-                        <div>
-                            <h5 class="mb-0 text-light fw-bold">Pulse AI</h5>
-                            <small class="text-info"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Online & Ready</small>
-                        </div>
+                        <span class="badge-cyan small">Rapid Response</span>
                     </div>
-                    
-                    <div class="chat-body" id="chatBody">
-                        <div class="chat-bubble ai-bubble">
-                            Hello! I am Pulse AI, your intelligent logistics assistant. How can I help you today? You can ask me about tracking, quotes, or services.
-                        </div>
-                        
-                        <div class="typing-indicator" id="typingIndicator">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                        </div>
+
+                    <div id="contactToast" class="alert alert-success d-none border-0 text-white" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981 !important;">
+                        <i class="fa-solid fa-circle-check me-2"></i> Your inquiry has been transmitted to our corporate logistics triage team.
                     </div>
-                    
-                    <div class="chat-footer">
-                        <input type="text" class="chat-input" id="chatInput" placeholder="Type your message to Pulse AI...">
-                        <button class="chat-send-btn" id="sendBtn">
-                            <i class="fa-solid fa-paper-plane"></i>
-                        </button>
-                    </div>
+
+                    <form id="contactForm" onsubmit="handleContact(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Your Full Name</label>
+                                <input type="text" class="form-control pulse-input" placeholder="e.g. Ahmed Durwesh" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Corporate Email Address</label>
+                                <input type="email" class="form-control pulse-input" placeholder="e.g. name@company.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Inquiry Subject</label>
+                                <select class="form-select pulse-select" required>
+                                    <option value="enterprise">Enterprise Cargo Volume Account</option>
+                                    <option value="drone">Autonomous Drone Network Deployment</option>
+                                    <option value="api">Carrier API Telemetry Integration</option>
+                                    <option value="other">General Commercial Inquiry</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary small">Phone Number</label>
+                                <input type="tel" class="form-control pulse-input" placeholder="+92 300 1234567">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-secondary small">Message / Freight Scope</label>
+                                <textarea class="form-control pulse-input" rows="4" placeholder="Detail your monthly volume, freight corridors, or specialized delivery requirements..." required></textarea>
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="glow-btn" id="contactSubmitBtn">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> Transmit Message to Operations
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-
         </div>
     </div>
-</div>
+</section>
 
 <script>
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-const chatBody = document.getElementById('chatBody');
-const typingIndicator = document.getElementById('typingIndicator');
+function handleContact(e) {
+    e.preventDefault();
+    const btn = document.getElementById('contactSubmitBtn');
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Transmitting...';
 
-function appendMessage(text, isUser) {
-    const bubble = document.createElement('div');
-    bubble.className = `chat-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}`;
-    bubble.innerText = text;
-    chatBody.insertBefore(bubble, typingIndicator);
-    chatBody.scrollTop = chatBody.scrollHeight;
-}
-
-function processAIResponse(userText) {
-    typingIndicator.style.display = 'flex';
-    chatBody.scrollTop = chatBody.scrollHeight;
-    
     setTimeout(() => {
-        typingIndicator.style.display = 'none';
-        let response = "I am currently processing high volume of data. Please hold on or contact our human hotline.";
-        const lowerText = userText.toLowerCase();
-        
-        if (lowerText.includes('track') || lowerText.includes('where')) {
-            response = "To track a parcel, please visit our Tracking page and enter your AI-generated Waybill ID.";
-        } else if (lowerText.includes('price') || lowerText.includes('cost') || lowerText.includes('quote')) {
-            response = "Our pricing is dynamic based on real-time factors. Please visit our Quotes section for an instant AI estimation.";
-        } else if (lowerText.includes('hello') || lowerText.includes('hi')) {
-            response = "Greetings! How can I optimize your logistics today?";
-        }
-        
-        appendMessage(response, false);
-    }, 1500);
+        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Message Transmitted';
+        document.getElementById('contactToast').classList.remove('d-none');
+        document.getElementById('contactForm').reset();
+    }, 700);
 }
-
-sendBtn.addEventListener('click', () => {
-    const text = chatInput.value.trim();
-    if (text) {
-        appendMessage(text, true);
-        chatInput.value = '';
-        processAIResponse(text);
-    }
-});
-
-chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendBtn.click();
-    }
-});
 </script>
 
 <?php include('../includes/footer.php'); ?>

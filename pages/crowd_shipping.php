@@ -1,207 +1,176 @@
 <?php include('../includes/header.php'); ?>
 
-<!-- Leaflet CSS for Map -->
+<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
-/* Crowd Shipping Glassmorphism Styles */
-.crowd-hero {
-    position: relative;
-    padding: 120px 0 60px;
-    background: url('../assets/img/lockers_bg.jpg') no-repeat center center/cover;
-    background-color: #081120;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    min-height: 100vh;
-}
-.crowd-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(10,14,23,0.95) 0%, rgba(8,17,32,0.9) 100%);
-}
-.crowd-content {
-    position: relative;
-    z-index: 2;
-}
-.glass-panel {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
-    height: 100%;
-    transition: transform 0.3s;
-}
-.glass-panel:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
-}
-.glow-input {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    color: white;
-    border-radius: 10px;
-    padding: 12px;
-}
-.glow-input:focus {
-    background: rgba(0,0,0,0.7);
-    border-color: #00ffff;
-    color: white;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-}
-.glow-btn {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    border: none;
-    color: white;
-    font-weight: bold;
-    border-radius: 50px;
-    padding: 12px 30px;
+#crowd-map {
+    height: 380px;
     width: 100%;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(0, 242, 254, 0.25);
 }
-.glow-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.9);
+#crowd-map .leaflet-tile {
+    filter: brightness(0.65) invert(1) contrast(2.5) hue-rotate(200deg) saturate(0.25);
 }
+
 .driver-card {
-    background: rgba(0, 255, 255, 0.05);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 15px;
+    background: rgba(6, 11, 20, 0.85);
+    border: 1px solid rgba(0, 242, 254, 0.2);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 15px;
+    transition: var(--transition);
+}
+.driver-card:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
 }
 .driver-avatar {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: #00ffff;
-    color: #000;
+    background: rgba(0, 242, 254, 0.15);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-#crowd-map {
-    height: 350px;
-    border-radius: 15px;
-    border: 1px solid rgba(0, 255, 255, 0.3);
-}
-.pulse-circle {
-    width: 15px;
-    height: 15px;
-    background-color: #00ffff;
-    border-radius: 50%;
-    animation: pulseGlow 1.5s infinite;
-}
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.7); }
-    70% { box-shadow: 0 0 0 15px rgba(0, 255, 255, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); }
+    justify-content: center;
+    font-size: 1.3rem;
 }
 </style>
 
-<div class="crowd-hero text-light">
-    <div class="container crowd-content">
-        
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold"><i class="fa-solid fa-users text-info"></i> AI Crowd Shipping</h1>
-            <p class="lead text-muted">Module 10: Peer-to-peer delivery network. Earn on your commute.</p>
-        </div>
+<!-- HERO -->
+<section class="page-hero hero-crowd">
+    <div class="container text-center">
+        <span class="badge bg-warning text-dark mb-2 d-inline-block fw-bold"><i class="fa-solid fa-people-arrows me-1"></i> Peer-to-Peer Commute Network</span>
+        <h1 class="hero-title-gradient">AI Crowd-Shipping</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 650px;">
+            Match packages with everyday commuters heading in the same direction. Cut parcel delivery costs by up to 40% or monetize your routine daily travel.
+        </p>
+    </div>
+</section>
 
+<!-- CROWD PORTAL -->
+<section class="py-5" style="background: var(--bg-main);">
+    <div class="container">
         <div class="row g-4 mb-5">
-            
-            <!-- Send Parcel via Crowd -->
+            <!-- Send Parcel -->
             <div class="col-lg-6">
-                <div class="glass-panel">
-                    <h4 class="text-info mb-3"><i class="fa-solid fa-box-open"></i> Send a Parcel</h4>
-                    <p class="text-muted mb-4">Find someone traveling to your destination and save up to 40% on shipping costs.</p>
-                    
+                <div class="pulse-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-box-open text-info fs-5"></i>
+                            <h4 class="fw-bold text-white mb-0">Dispatch via Commuter</h4>
+                        </div>
+                        <span class="badge-cyan small">Save ~40%</span>
+                    </div>
+                    <p class="text-secondary small mb-4">Input your pickup and drop-off points to find trusted drivers travelling right now.</p>
+
                     <form onsubmit="findDrivers(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">From</label>
-                                <input type="text" class="form-control glow-input" placeholder="Origin Address" required>
+                                <label class="form-label text-secondary small">Origin Location</label>
+                                <input type="text" id="crowdOrigin" class="form-control pulse-input" placeholder="e.g. DHA Phase 6" value="DHA Phase 6" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">To</label>
-                                <input type="text" class="form-control glow-input" placeholder="Destination Address" required>
+                                <label class="form-label text-secondary small">Destination Location</label>
+                                <input type="text" id="crowdDest" class="form-control pulse-input" placeholder="e.g. Saddar / I.I Chundrigar" value="I.I Chundrigar Road" required>
                             </div>
                             <div class="col-12 mt-4">
-                                <button type="submit" class="glow-btn" id="findBtn"><i class="fa-solid fa-search"></i> Match with Drivers</button>
+                                <button type="submit" class="glow-btn" id="findBtn">
+                                    <i class="fa-solid fa-satellite-dish me-1"></i> Scan Nearby Verified Commuters
+                                </button>
                             </div>
                         </div>
                     </form>
 
+                    <!-- Results List -->
                     <div id="driver-results" class="mt-4" style="display: none;">
-                        <h6 class="text-success mb-3"><i class="fa-solid fa-check-circle"></i> AI Found 2 Matches on this Route</h6>
-                        
+                        <h6 class="text-success fw-bold mb-3"><i class="fa-solid fa-circle-check me-1"></i> AI Discovered 2 Matched Commuters:</h6>
+
                         <div class="driver-card">
-                            <div class="driver-avatar"><i class="fa-solid fa-user"></i></div>
+                            <div class="driver-avatar"><i class="fa-solid fa-car"></i></div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold">Ali R. <span class="badge bg-success ms-2">Verified</span></h6>
-                                <small class="text-muted">Traveling in 2 hours via Car.</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h6 class="text-white mb-0 fw-bold">Ali Raza</h6>
+                                    <span class="badge bg-success" style="font-size: 0.65rem;">ID Verified</span>
+                                </div>
+                                <small class="text-secondary">Departs in 35 mins &bull; Sedan (Trunk Space Avail.)</small>
                             </div>
-                            <div>
-                                <h5 class="text-info mb-0">Rs. 450</h5>
+                            <div class="text-end">
+                                <h5 class="text-info fw-bold mb-0">Rs. 450</h5>
+                                <button class="btn btn-sm btn-outline-info rounded-pill mt-1" onclick="alert('Booking request dispatched to Ali Raza via Escrow!')">Request Drop</button>
                             </div>
                         </div>
-                        
+
                         <div class="driver-card">
                             <div class="driver-avatar"><i class="fa-solid fa-motorcycle"></i></div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold">Zain B. <span class="badge bg-success ms-2">Verified</span></h6>
-                                <small class="text-muted">Traveling Tomorrow via Bike.</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h6 class="text-white mb-0 fw-bold">Zain Baig</h6>
+                                    <span class="badge bg-success" style="font-size: 0.65rem;">ID Verified</span>
+                                </div>
+                                <small class="text-secondary">Departs in 1.5 hrs &bull; Express Courier Bike</small>
                             </div>
-                            <div>
-                                <h5 class="text-info mb-0">Rs. 200</h5>
+                            <div class="text-end">
+                                <h5 class="text-info fw-bold mb-0">Rs. 250</h5>
+                                <button class="btn btn-sm btn-outline-info rounded-pill mt-1" onclick="alert('Booking request dispatched to Zain Baig via Escrow!')">Request Drop</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Become a Driver -->
+            <!-- Become a Commute Driver -->
             <div class="col-lg-6">
-                <div class="glass-panel">
-                    <h4 class="text-info mb-3"><i class="fa-solid fa-car-side"></i> Earn on your Route</h4>
-                    <p class="text-muted mb-4">Going somewhere? Add your route and our AI will assign you packages to deliver.</p>
-                    
-                    <div class="p-3 mb-4 rounded" style="background: rgba(40, 167, 69, 0.1); border: 1px dashed #28a745;">
+                <div class="pulse-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-steering-wheel text-warning fs-5"></i>
+                            <h4 class="fw-bold text-white mb-0">Earn on Your Commute</h4>
+                        </div>
+                        <span class="badge bg-warning text-dark fw-bold small">Passive Income</span>
+                    </div>
+                    <p class="text-secondary small mb-4">Commuting to work or inter-city? Take verified packages along your journey and offset fuel costs.</p>
+
+                    <div class="p-3 mb-4 rounded-3" style="background: rgba(16, 185, 129, 0.1); border: 1px dashed #10b981;">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="text-success m-0">AI Estimated Earnings:</h6>
-                            <h4 class="fw-bold text-success m-0">Rs. 8,500 <small style="font-size: 0.8rem;">/mo</small></h4>
+                            <div>
+                                <span class="text-secondary small">Average Commuter Earnings:</span>
+                                <h4 class="fw-bold text-success mb-0">Rs. 12,000 <small class="text-secondary" style="font-size: 0.8rem;">/mo</small></h4>
+                            </div>
+                            <i class="fa-solid fa-coins text-success fs-2 opacity-50"></i>
                         </div>
                     </div>
 
                     <form onsubmit="registerRoute(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Vehicle Type</label>
-                                <select class="form-select glow-input" required>
-                                    <option value="bike">Motorcycle</option>
+                                <label class="form-label text-secondary small">Transport Mode</label>
+                                <select class="form-select pulse-select" required>
                                     <option value="car">Car / Sedan</option>
-                                    <option value="van">Van / Truck</option>
+                                    <option value="bike">Motorcycle / Scooter</option>
+                                    <option value="van">Van / SUV</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Daily Route</label>
-                                <input type="text" class="form-control glow-input" placeholder="e.g. DHA to Saddar" required>
+                                <label class="form-label text-secondary small">Daily Regular Route</label>
+                                <input type="text" class="form-control pulse-input" placeholder="e.g. Clifton to Gulshan" required>
                             </div>
                             <div class="col-12 mt-4">
-                                <button type="submit" class="glow-btn" style="background: linear-gradient(45deg, #28a745, #20c997);" id="regBtn">
-                                    <i class="fa-solid fa-steering-wheel"></i> Register as Freelancer
+                                <button type="submit" class="btn-pulse-primary w-100" id="regBtn">
+                                    <i class="fa-solid fa-shield-check me-1"></i> Register as Verified Carrier
                                 </button>
                             </div>
                         </div>
                     </form>
-                    
-                    <div id="reg-success" class="mt-3 text-center d-none text-success">
-                        <i class="fa-solid fa-shield-check"></i> Registration submitted. Awaiting AI Verification.
+
+                    <div id="reg-success" class="mt-3 p-3 rounded-3 text-center d-none text-success" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981;">
+                        <i class="fa-solid fa-circle-check me-1"></i> Commute profile registered! Our AI will alert you when a parcel matches your travel corridor.
                     </div>
                 </div>
             </div>
@@ -210,69 +179,71 @@
         <!-- Live Network Map -->
         <div class="row">
             <div class="col-12">
-                <div class="glass-panel text-center">
-                    <h4 class="text-info mb-4">Live Freelance Network</h4>
-                    <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
-                        <div class="pulse-circle"></div> <span class="text-muted small">84 Active Drivers in your city</span>
+                <div class="pulse-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-users text-info"></i>
+                            <h5 class="fw-bold text-white mb-0">Active Urban Commuter Mesh</h5>
+                        </div>
+                        <span class="badge-cyan small"><i class="fa-solid fa-signal me-1"></i> 84 Active Drivers in Karachi Region</span>
                     </div>
                     <div id="crowd-map"></div>
                 </div>
             </div>
         </div>
-
     </div>
-</div>
+</section>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-// Mock functions for UI Interaction
 function findDrivers(e) {
     e.preventDefault();
     const btn = document.getElementById('findBtn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Routes...';
-    
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Querying Route Waypoints...';
+
     setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-search"></i> Match with Drivers';
+        btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Scan Nearby Verified Commuters';
         document.getElementById('driver-results').style.display = 'block';
-    }, 1500);
+    }, 700);
 }
 
 function registerRoute(e) {
     e.preventDefault();
     const btn = document.getElementById('regBtn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-    
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Submitting Profile...';
+
     setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Success';
+        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Profile Registered';
         document.getElementById('reg-success').classList.remove('d-none');
-    }, 1500);
+    }, 800);
 }
 
-// Leaflet Map Initialization
-const map = L.map('crowd-map', { zoomControl: false }).setView([24.8607, 67.0011], 12); // Centered on Karachi
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+// Leaflet Map Initialization with clean Dark Tiles (NO WATERMARK)
+const map = L.map('crowd-map').setView([24.8607, 67.0011], 12);
 
-// Add mock drivers moving slightly
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
 const driverLocations = [
-    [24.85, 67.02],
-    [24.88, 67.05],
-    [24.82, 67.08],
-    [24.89, 66.99]
+    { coords: [24.85, 67.02], name: "Ali R. (Car)", price: "Rs. 450" },
+    { coords: [24.88, 67.05], name: "Zain B. (Bike)", price: "Rs. 250" },
+    { coords: [24.82, 67.08], name: "Hamza K. (Sedan)", price: "Rs. 400" },
+    { coords: [24.89, 66.99], name: "Tariq M. (Van)", price: "Rs. 600" }
 ];
 
-const carIcon = L.divIcon({
-    className: 'custom-icon',
-    html: '<i class="fa-solid fa-car text-info"></i>',
-    iconSize: [20, 20]
-});
-const bikeIcon = L.divIcon({
-    className: 'custom-icon',
-    html: '<i class="fa-solid fa-motorcycle text-success"></i>',
-    iconSize: [20, 20]
-});
-
-driverLocations.forEach((loc, index) => {
-    L.marker(loc, {icon: index % 2 === 0 ? carIcon : bikeIcon}).addTo(map);
+driverLocations.forEach(d => {
+    L.circleMarker(d.coords, {
+        radius: 8,
+        fillColor: '#00f2fe',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.9
+    }).addTo(map).bindPopup(`<b>${d.name}</b><br>Rate: ${d.price}`);
 });
 </script>
 

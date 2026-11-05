@@ -1,164 +1,96 @@
 <?php include('../includes/header.php'); ?>
 
-<style>
-/* AI Quotes Glassmorphism */
-.quotes-hero {
-    position: relative;
-    padding: 120px 0 60px;
-    background: url('../assets/img/quotes_bg.jpg') no-repeat center center/cover;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-}
-.quotes-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(135deg, rgba(10,14,23,0.95) 0%, rgba(8,17,32,0.9) 100%);
-}
-.quotes-content {
-    position: relative;
-    z-index: 2;
-}
-.glass-form-box {
-    background: rgba(20, 25, 40, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 35px;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
-}
-.quote-input {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    color: white;
-    border-radius: 10px;
-}
-.quote-input:focus {
-    background: rgba(0,0,0,0.7);
-    border-color: #00ffff;
-    color: white;
-    box-shadow: 0 0 10px rgba(0,255,255,0.3);
-}
-.glow-btn {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    border: none;
-    color: white;
-    font-weight: bold;
-    border-radius: 50px;
-    padding: 12px 30px;
-    width: 100%;
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
-    transition: all 0.3s ease;
-}
-.glow-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.9);
-    transform: translateY(-2px);
-}
-.processing-step {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 10px;
-    color: #ccc;
-    font-size: 0.95rem;
-    opacity: 0.5;
-    transition: opacity 0.3s;
-}
-.processing-step.active {
-    opacity: 1;
-    color: #00ffff;
-}
-.result-box {
-    background: rgba(0, 255, 255, 0.05);
-    border: 1px solid #00ffff;
-    border-radius: 15px;
-    padding: 25px;
-    text-align: center;
-    display: none;
-    animation: fadeIn 0.5s ease-in-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.price-display {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #00ffff;
-    text-shadow: 0 0 15px rgba(0,255,255,0.5);
-}
-.savings-alert {
-    background: rgba(40, 167, 69, 0.1);
-    border: 1px dashed #28a745;
-    color: #28a745;
-    padding: 10px;
-    border-radius: 10px;
-    margin-top: 15px;
-    font-size: 0.9rem;
-}
-</style>
+<!-- QUOTES HERO -->
+<section class="page-hero hero-quotes">
+    <div class="container text-center">
+        <span class="badge-cyan mb-2 d-inline-block"><i class="fa-solid fa-calculator me-1"></i> Multi-Carrier Rate Matrix</span>
+        <h1 class="hero-title-gradient">Instant AI Freight Estimator</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 650px;">
+            Dynamic spot rates factoring in live aviation fuel indices, ocean bunker surcharges, Incoterms 2020 duties, and weather vectors.
+        </p>
+    </div>
+</section>
 
-<div class="quotes-hero">
-    <div class="container quotes-content">
-        <div class="row justify-content-center">
-            
-            <div class="col-lg-10 text-center mb-5">
-                <h1 class="display-4 fw-bold text-light"><i class="fa-solid fa-calculator text-info"></i> AI Price Estimator</h1>
-                <p class="lead text-muted">Real-time dynamic pricing based on weather, fuel costs, and route analytics.</p>
-            </div>
+<!-- QUOTE CALCULATOR & BREAKDOWN -->
+<section class="py-5" style="background: var(--bg-main);">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <!-- Form Input Card -->
+            <div class="col-lg-7">
+                <div class="pulse-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-sliders text-info fs-5"></i>
+                            <h4 class="fw-bold text-white mb-0">Consignment Parameters</h4>
+                        </div>
+                        <span class="badge-cyan small">Instant Spot Rate</span>
+                    </div>
 
-            <div class="col-lg-6 mb-4">
-                <div class="glass-form-box">
-                    <form id="quoteForm">
+                    <form id="quoteForm" onsubmit="calculateQuote(event)">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Origin City</label>
-                                <input type="text" class="form-control quote-input" placeholder="e.g. Karachi" required>
+                                <label class="form-label text-secondary small">Origin Hub / City</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-0" style="background: rgba(0, 242, 254, 0.1); color: var(--cyan);"><i class="fa-solid fa-location-arrow"></i></span>
+                                    <input type="text" id="origin" class="form-control pulse-input" placeholder="e.g. Karachi" value="Karachi Port (PK)" required>
+                                </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Destination City</label>
-                                <input type="text" class="form-control quote-input" placeholder="e.g. Dubai" required>
+                                <label class="form-label text-secondary small">Destination Hub / City</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-0" style="background: rgba(0, 242, 254, 0.1); color: var(--cyan);"><i class="fa-solid fa-location-dot"></i></span>
+                                    <input type="text" id="destination" class="form-control pulse-input" placeholder="e.g. Dubai" value="Dubai Logistics Hub (DXB)" required>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Weight (kg)</label>
-                                <input type="number" id="q-weight" class="form-control quote-input" placeholder="0.0" required>
+
+                            <div class="col-md-4">
+                                <label class="form-label text-secondary small">Gross Weight (kg)</label>
+                                <input type="number" id="weight" class="form-control pulse-input" placeholder="e.g. 15" value="15" min="0.5" step="0.5" required>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Freight Type</label>
-                                <select id="q-freight" class="form-select quote-input" required>
-                                    <option value="air">Air Freight</option>
-                                    <option value="sea">Sea Freight</option>
-                                    <option value="road">Road Transport</option>
+
+                            <div class="col-md-4">
+                                <label class="form-label text-secondary small">Freight Mode</label>
+                                <select id="freightType" class="form-select pulse-select" required>
+                                    <option value="air">Air Cargo (Express)</option>
+                                    <option value="sea">Ocean Container (Economy)</option>
+                                    <option value="road">Highway Overland</option>
+                                    <option value="drone">Autonomous Drone (< 5kg)</option>
                                 </select>
                             </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label text-secondary small">Transit Urgency</label>
+                                <select id="urgency" class="form-select pulse-select">
+                                    <option value="1">Standard (5-7 Days)</option>
+                                    <option value="1.3">Express (2-3 Days)</option>
+                                    <option value="1.7">Critical Same-Day / Next Flight</option>
+                                </select>
+                            </div>
+
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Incoterms</label>
-                                <select id="q-incoterm" class="form-select quote-input" required>
-                                    <option value="EXW">EXW (Ex Works)</option>
-                                    <option value="FCA">FCA (Free Carrier)</option>
-                                    <option value="CPT">CPT (Carriage Paid To)</option>
-                                    <option value="CIP">CIP (Carriage and Insurance Paid To)</option>
-                                    <option value="DAT">DAT (Delivered at Terminal)</option>
-                                    <option value="DAP">DAP (Delivered at Place)</option>
+                                <label class="form-label text-secondary small">Incoterms Framework</label>
+                                <select id="incoterm" class="form-select pulse-select">
+                                    <option value="FOB">FOB (Free On Board)</option>
+                                    <option value="CIF">CIF (Cost, Insurance & Freight)</option>
                                     <option value="DDP">DDP (Delivered Duty Paid)</option>
-                                    <option value="FAS">FAS (Free Alongside Ship)</option>
-                                    <option value="FOB" selected>FOB (Free On Board)</option>
-                                    <option value="CFR">CFR (Cost and Freight)</option>
-                                    <option value="CIF">CIF (Cost, Insurance and Freight)</option>
+                                    <option value="EXW">EXW (Ex Works)</option>
                                 </select>
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label text-info small text-uppercase">Urgency</label>
-                                <select id="q-urgency" class="form-select quote-input" required>
-                                    <option value="standard">Standard (5-7 Days)</option>
-                                    <option value="express">Express (1-2 Days)</option>
-                                </select>
+                                <label class="form-label text-secondary small">Carbon Offset Option</label>
+                                <div class="form-check form-switch pt-2">
+                                    <input class="form-check-input" type="checkbox" id="carbonOffset" checked style="cursor: pointer;">
+                                    <label class="form-check-label text-secondary small" for="carbonOffset">
+                                        Include Verified Carbon Offset (+ $4.50)
+                                    </label>
+                                </div>
                             </div>
+
                             <div class="col-12 mt-4">
-                                <button type="submit" class="glow-btn">
-                                    <i class="fa-solid fa-microchip"></i> Calculate Optimal Route
+                                <button type="submit" class="glow-btn" id="calcBtn">
+                                    <i class="fa-solid fa-microchip me-1"></i> Compute Optimized Freight Rate
                                 </button>
                             </div>
                         </div>
@@ -166,116 +98,117 @@
                 </div>
             </div>
 
+            <!-- Dynamic Result Card -->
             <div class="col-lg-5">
-                <!-- AI Processing Logs -->
-                <div class="glass-form-box h-100 d-flex flex-column justify-content-center" id="processing-panel" style="display:none !important;">
-                    <h5 class="text-info mb-4">AI Brain Processing...</h5>
-                    
-                    <div class="processing-step" id="step-1">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Analyzing distance and terrain...
+                <div class="pulse-card h-100 d-flex flex-column justify-content-between" id="quoteResultCard">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-white mb-0">
+                                <i class="fa-solid fa-receipt text-info me-2"></i> Quote Manifest
+                            </h5>
+                            <span class="badge-cyan small">Spot Rate Verified</span>
+                        </div>
+
+                        <!-- Processing Indicator -->
+                        <div id="quoteLoader" class="text-center py-5" style="display: none;">
+                            <i class="fa-solid fa-circle-notch fa-spin text-info fs-1 mb-3"></i>
+                            <h6 class="text-white">Querying Carrier Neural Matrix...</h6>
+                            <small class="text-secondary">Correlating fuel surcharge & customs index</small>
+                        </div>
+
+                        <!-- Estimated Output -->
+                        <div id="quoteSummary">
+                            <div class="p-3 rounded-3 mb-4 text-center" style="background: rgba(0, 242, 254, 0.05); border: 1px solid var(--cyan);">
+                                <span class="text-secondary small text-uppercase">Total Estimated Cost</span>
+                                <h1 class="fw-bold my-1 font-monospace" id="totalPrice" style="color: var(--cyan); font-size: 2.8rem;">$245.00</h1>
+                                <small class="text-success" id="savingsBadge"><i class="fa-solid fa-piggy-bank me-1"></i> AI saved 18% via Direct Routing</small>
+                            </div>
+
+                            <div class="small">
+                                <div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-25">
+                                    <span class="text-secondary">Base Freight Weight Rate:</span>
+                                    <span class="text-white fw-bold font-monospace" id="baseRate">$180.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-25">
+                                    <span class="text-secondary">Dynamic Fuel Surcharge:</span>
+                                    <span class="text-white fw-bold font-monospace" id="fuelSurcharge">$38.50</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-25">
+                                    <span class="text-secondary">Customs Protocol & Duties:</span>
+                                    <span class="text-white fw-bold font-monospace" id="customsFee">$22.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-2 border-bottom border-secondary border-opacity-25">
+                                    <span class="text-secondary">Zero-Carbon Certificate:</span>
+                                    <span class="text-success fw-bold font-monospace" id="offsetFee">$4.50</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-3 rounded-3 small" style="background: rgba(6, 11, 20, 0.7); border: 1px solid rgba(255,255,255,0.06);">
+                                <div class="d-flex gap-2 text-info">
+                                    <i class="fa-solid fa-lightbulb mt-1"></i>
+                                    <span id="aiInsightText">Consignment qualifies for automated customs manifest pre-check on arrival at destination.</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="processing-step" id="step-2">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Comparing 4 different carrier APIs...
-                    </div>
-                    <div class="processing-step" id="step-3">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Factoring real-time fuel surcharge...
+
+                    <div class="pt-3 mt-4 border-top border-secondary border-opacity-25 text-center">
+                        <a href="../login.php" class="btn-pulse-primary w-100">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Lock Rate & Book Consignment
+                        </a>
                     </div>
                 </div>
-
-                <!-- Final Result Box -->
-                <div class="result-box mt-3" id="result-panel">
-                    <p class="text-muted text-uppercase small mb-1">AI Optimized Price</p>
-                    <div class="price-display" id="final-price">Rs. 0</div>
-                    <p class="text-info mb-0">Fastest Route Selected: <strong id="route-type">Air Freight</strong></p>
-                    
-                    <div class="savings-alert" id="savings-box">
-                        <i class="fa-solid fa-lightbulb"></i> <strong>AI Suggestion:</strong> Switch to Sea Freight to save 35% on this route!
-                    </div>
-                    
-                    <button class="btn btn-outline-info mt-4 w-100 rounded-pill">Book This Quote</button>
-                </div>
-
             </div>
-
         </div>
     </div>
-</div>
+</section>
 
 <script>
-document.getElementById('quoteForm').addEventListener('submit', function(e) {
+function calculateQuote(e) {
     e.preventDefault();
-    
-    // Reset panels
-    document.getElementById('result-panel').style.display = 'none';
-    const procPanel = document.getElementById('processing-panel');
-    procPanel.style.setProperty('display', 'flex', 'important');
-    
-    // Reset Steps
-    for(let i=1; i<=3; i++) {
-        document.getElementById('step-'+i).classList.remove('active');
-        document.getElementById('step-'+i).innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-    }
 
-    // Step 1
-    setTimeout(() => {
-        document.getElementById('step-1').classList.add('active');
-        document.getElementById('step-1').innerHTML = '<i class="fa-solid fa-check text-success"></i> Distance mapped successfully.';
-    }, 800);
+    const loader = document.getElementById('quoteLoader');
+    const summary = document.getElementById('quoteSummary');
+    loader.style.display = 'block';
+    summary.style.display = 'none';
 
-    // Step 2
     setTimeout(() => {
-        document.getElementById('step-2').classList.add('active');
-        document.getElementById('step-2').innerHTML = '<i class="fa-solid fa-check text-success"></i> 4 Carrier APIs compared.';
-    }, 1600);
+        loader.style.display = 'none';
+        summary.style.display = 'block';
 
-    // Step 3
-    setTimeout(() => {
-        document.getElementById('step-3').classList.add('active');
-        document.getElementById('step-3').innerHTML = '<i class="fa-solid fa-check text-success"></i> Fuel surcharge applied.';
-    }, 2400);
+        const weight = parseFloat(document.getElementById('weight').value) || 10;
+        const freight = document.getElementById('freightType').value;
+        const urgency = parseFloat(document.getElementById('urgency').value) || 1;
+        const hasOffset = document.getElementById('carbonOffset').checked;
 
-    // Final Result
-    setTimeout(() => {
-        procPanel.style.setProperty('display', 'none', 'important');
-        document.getElementById('result-panel').style.display = 'block';
-        
-        const weight = parseFloat(document.getElementById('q-weight').value) || 1;
-        const urgency = document.getElementById('q-urgency').value;
-        const freight = document.getElementById('q-freight').value;
-        const incoterm = document.getElementById('q-incoterm').value;
-        
-        let basePrice = weight * 500;
-        let route = freight === 'air' ? 'Air Freight' : (freight === 'sea' ? 'Sea Freight' : 'Road Transport');
-        let savingsText = '';
-        
-        // Adjust price based on Incoterm (simulated AI complexity)
-        if (['DDP', 'DAP', 'DAT'].includes(incoterm)) {
-            basePrice *= 1.4; // Higher cost for delivered duties
-            savingsText = `<i class="fa-solid fa-scale-balanced"></i> <strong>AI Insight:</strong> You selected ${incoterm}. Consider EXW or FOB to lower your upfront costs if you have local customs agents.`;
-        } else if (['FOB', 'EXW', 'FCA'].includes(incoterm)) {
-            basePrice *= 0.8; // Lower upfront cost
-            savingsText = `<i class="fa-solid fa-shield-halved"></i> <strong>AI Warning:</strong> With ${incoterm}, ensure you have calculated destination port handling charges!`;
+        // Base rate multiplier per kg
+        let ratePerKg = 12;
+        if (freight === 'sea') ratePerKg = 4;
+        else if (freight === 'road') ratePerKg = 7;
+        else if (freight === 'drone') ratePerKg = 22;
+
+        const base = (weight * ratePerKg * urgency).toFixed(2);
+        const fuel = (base * 0.16).toFixed(2);
+        const customs = (base * 0.08).toFixed(2);
+        const offset = hasOffset ? 4.50 : 0;
+        const total = (parseFloat(base) + parseFloat(fuel) + parseFloat(customs) + offset).toFixed(2);
+
+        document.getElementById('baseRate').innerText = '$' + base;
+        document.getElementById('fuelSurcharge').innerText = '$' + fuel;
+        document.getElementById('customsFee').innerText = '$' + customs;
+        document.getElementById('offsetFee').innerText = '$' + offset.toFixed(2);
+        document.getElementById('totalPrice').innerText = '$' + total;
+
+        const insight = document.getElementById('aiInsightText');
+        if (freight === 'drone') {
+            insight.innerText = "Drone drops operate in certified air corridors under 120m altitude with automatic wind compensation.";
+        } else if (freight === 'sea') {
+            insight.innerText = "Sea container route utilizes direct maritime corridors with real-time AIS vessel telemetry.";
+        } else {
+            insight.innerText = "Air cargo freight manifest includes automatic customs pre-clearance at destination hub.";
         }
-        
-        if(urgency === 'express') {
-            basePrice *= 2.5;
-            if (freight !== 'air') {
-                route = 'Air Freight (Auto-Upgraded for Express)';
-            }
-            if (!savingsText) savingsText = '<i class="fa-solid fa-lightbulb"></i> <strong>AI Suggestion:</strong> Switch to Standard transit to save up to 60%!';
-        } else if (weight > 50 && freight !== 'sea') {
-            if (!savingsText) savingsText = '<i class="fa-solid fa-check-circle"></i> <strong>AI Validation:</strong> For weights over 50kg, switching to Sea Freight is the most cost-effective option.';
-        } else if (!savingsText) {
-            savingsText = '<i class="fa-solid fa-box"></i> <strong>AI Suggestion:</strong> Bundle another 2kg package for the same flat rate!';
-        }
-        
-        document.getElementById('final-price').innerText = 'Rs. ' + Math.floor(basePrice).toLocaleString();
-        document.getElementById('route-type').innerText = route;
-        document.getElementById('savings-box').innerHTML = savingsText;
-        
-    }, 3200);
-
-});
+    }, 450);
+}
 </script>
 
 <?php include('../includes/footer.php'); ?>

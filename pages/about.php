@@ -1,185 +1,109 @@
 <?php include('../includes/header.php'); ?>
 
-<style>
-/* AI About Us Glassmorphism Styles */
-.about-hero {
-    position: relative;
-    padding: 140px 0 80px;
-    background: url('../assets/img/about_bg.jpg') no-repeat center center/cover;
-    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-}
-.about-hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(180deg, rgba(10,14,23,0.85) 0%, rgba(8,17,32,1) 100%);
-}
-.about-content {
-    position: relative;
-    z-index: 2;
-}
-.glass-panel {
-    background: rgba(20, 25, 40, 0.5);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.05);
-    margin-bottom: 30px;
-    transition: all 0.3s ease;
-}
-.glass-panel:hover {
-    border-color: rgba(0, 255, 255, 0.5);
-    box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
-    transform: translateY(-5px);
-}
-.ai-brain-icon {
-    font-size: 4rem;
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 20px;
-}
-.stat-glass-box {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-.stat-glass-box:hover {
-    border-color: #00ffff;
-    background: rgba(0,255,255,0.05);
-}
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #00ffff;
-    text-shadow: 0 0 10px rgba(0,255,255,0.5);
-}
-.timeline-item {
-    position: relative;
-    padding-left: 30px;
-    margin-bottom: 20px;
-    border-left: 2px solid rgba(0,255,255,0.3);
-}
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -7px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #00ffff;
-    box-shadow: 0 0 10px #00ffff;
-}
-</style>
-
-<div class="about-hero">
-    <div class="container about-content">
-        <div class="row align-items-center">
-            <div class="col-lg-6 mb-5 mb-lg-0">
-                <h1 class="display-4 fw-bold text-light mb-4">
-                    <span style="color: #00ffff;">AI-Driven</span> Logistics<br>Intelligence
-                </h1>
-                <p class="lead text-muted mb-4">
-                    Parcel Pulse isn't just a courier company. We are a data science and logistics hybrid, utilizing predictive neural networks to ensure your shipments are faster, safer, and smarter.
-                </p>
-                <div class="d-flex gap-3">
-                    <div class="stat-glass-box flex-fill">
-                        <div class="stat-number counter" data-target="99.8">0</div>
-                        <div class="text-muted small">AI Prediction Accuracy %</div>
-                    </div>
-                    <div class="stat-glass-box flex-fill">
-                        <div class="stat-number counter" data-target="150">0</div>
-                        <div class="text-muted small">Global AI Hubs</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-6">
-                <div class="glass-panel text-center">
-                    <i class="fa-solid fa-network-wired ai-brain-icon"></i>
-                    <h3 class="text-light mb-3">The Neural Core</h3>
-                    <p class="text-muted">
-                        Our proprietary AI, "The Neural Core," analyzes global weather patterns, traffic APIs, and geopolitical events in real-time to reroute your packages dynamically, avoiding delays before they happen.
-                    </p>
-                    <div class="mt-4 text-start">
-                        <div class="timeline-item">
-                            <h5 class="text-info mb-1">Pattern Recognition</h5>
-                            <p class="text-muted small">Analyzing millions of past routes.</p>
-                        </div>
-                        <div class="timeline-item">
-                            <h5 class="text-info mb-1">Dynamic Rerouting</h5>
-                            <p class="text-muted small">Micro-second adjustments to logistics paths.</p>
-                        </div>
-                        <div class="timeline-item">
-                            <h5 class="text-info mb-1">Predictive ETA</h5>
-                            <p class="text-muted small">Delivery times accurate to the minute.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- ABOUT HERO -->
+<section class="page-hero hero-about">
+    <div class="container text-center">
+        <span class="badge-cyan mb-2 d-inline-block"><i class="fa-solid fa-microchip me-1"></i> Autonomous Freight Revolution</span>
+        <h1 class="hero-title-gradient">Data Science Meets Global Freight</h1>
+        <p class="text-secondary max-w-lg mx-auto" style="max-width: 650px;">
+            Parcel Pulse is not a traditional courier. We are an AI logistics technology firm building autonomous infrastructure for the next century of global trade.
+        </p>
     </div>
-</div>
+</section>
 
-<section class="py-5" style="background: #081120;">
+<!-- MAIN CONTENT -->
+<section class="py-5" style="background: var(--bg-main);">
     <div class="container">
-        <div class="row justify-content-center text-center mb-5">
-            <div class="col-lg-8">
-                <h2 class="fw-bold"><i class="fa-solid fa-microchip text-info"></i> Intelligent Fleet</h2>
-                <p class="text-muted">Powered by autonomous tech and smart sensors.</p>
+        <!-- Story & Stats -->
+        <div class="row align-items-center g-5 mb-5">
+            <div class="col-lg-6">
+                <span class="badge-cyan mb-2 d-inline-block">Our Mission</span>
+                <h2 class="fw-bold text-white display-6 mb-3">Re-Architecting Supply Chains with Real-Time Neural Cores</h2>
+                <p class="text-secondary mb-4" style="line-height: 1.8;">
+                    Founded in 2024, Parcel Pulse set out to eliminate the systemic friction in global supply chains: opaque customs delays, weather holds, empty vehicle backhauls, and missed last-mile drop-offs.
+                </p>
+                <p class="text-secondary mb-4" style="line-height: 1.8;">
+                    By combining orbital satellite telemetry, automated aerial drones, computer-vision robotic sortation, and neighborhood smart vault lockers, we offer businesses predictive guarantees rather than mere shipping estimates.
+                </p>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background: rgba(6, 11, 20, 0.85); border: 1px solid rgba(0, 242, 254, 0.2);">
+                            <h3 class="fw-bold mb-0 text-white font-monospace" style="color: var(--cyan) !important;">99.85%</h3>
+                            <small class="text-secondary">AI Prediction Precision</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background: rgba(6, 11, 20, 0.85); border: 1px solid rgba(0, 242, 254, 0.2);">
+                            <h3 class="fw-bold mb-0 text-white font-monospace" style="color: #10b981 !important;">154+</h3>
+                            <small class="text-secondary">Automated City Hubs</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="pulse-card">
+                    <h5 class="fw-bold text-white mb-4">
+                        <i class="fa-solid fa-code-branch text-info me-2"></i> The Autonomous Highway
+                    </h5>
+                    <div class="d-flex flex-column gap-3 small text-secondary">
+                        <div class="d-flex gap-3 align-items-start">
+                            <span class="badge-cyan">2024</span>
+                            <div>
+                                <h6 class="text-white mb-1">Foundational AI Predictive Engine Launch</h6>
+                                <p class="mb-0">Neural networks trained across 10 million historical cargo manifests to anticipate customs & weather bottlenecks.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 align-items-start">
+                            <span class="badge-cyan">2025</span>
+                            <div>
+                                <h6 class="text-white mb-1">Autonomous Drone & Smart Locker Deployment</h6>
+                                <p class="mb-0">Commercial authorization for point-to-point drone corridors and deployment of over 500 smart neighborhood lockers.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 align-items-start">
+                            <span class="badge bg-success text-dark fw-bold">2026</span>
+                            <div>
+                                <h6 class="text-white mb-1">Global Decentralized Mesh Expansion</h6>
+                                <p class="mb-0">Interconnecting maritime AIS vessel feeds, crowd-shipping commuter networks, and instant multi-modal dispatching.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="glass-panel h-100 text-center">
-                    <i class="fa-solid fa-plane-up text-info mb-3" style="font-size: 3rem;"></i>
-                    <h4>Autonomous Drones</h4>
-                    <p class="text-muted small">Last-mile automated drone drops for urgent local parcels.</p>
+
+        <!-- Pillars Grid -->
+        <div class="row g-4 text-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="pulse-card h-100">
+                    <div class="p-3 rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(0, 242, 254, 0.1); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                        <i class="fa-solid fa-satellite"></i>
+                    </div>
+                    <h4 class="fw-bold text-white mb-2">Orbital Telemetry</h4>
+                    <p class="text-secondary small mb-0">Every consignment is monitored via satellite constellations, updating speed, altitude, and ETA continuously.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="glass-panel h-100 text-center">
-                    <i class="fa-solid fa-truck-fast text-info mb-3" style="font-size: 3rem;"></i>
-                    <h4>Smart Trucks</h4>
-                    <p class="text-muted small">IoT integrated vehicles tracking temperature, humidity, and shock.</p>
+            <div class="col-lg-4 col-md-6">
+                <div class="pulse-card h-100">
+                    <div class="p-3 rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <h4 class="fw-bold text-white mb-2">Zero-Carbon Ambition</h4>
+                    <p class="text-secondary small mb-0">Committed to 100% electric ground delivery and zero-emission aerial drones across all major urban networks by 2030.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="glass-panel h-100 text-center">
-                    <i class="fa-solid fa-robot text-info mb-3" style="font-size: 3rem;"></i>
-                    <h4>Robotic Sorting</h4>
-                    <p class="text-muted small">AI vision-guided robots sort 10,000 packages per hour with zero error.</p>
+            <div class="col-lg-4 col-md-6">
+                <div class="pulse-card h-100">
+                    <div class="p-3 rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h4 class="fw-bold text-white mb-2">Cryptographic Custody</h4>
+                    <p class="text-secondary small mb-0">Multi-signature digital handoffs and IoT vault seals guarantee tamper-proof package provenance from pickup to drop.</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
-
-<script>
-// Simple counter animation for stats
-const counters = document.querySelectorAll('.counter');
-counters.forEach(counter => {
-    counter.innerText = '0';
-    const updateCounter = () => {
-        const target = +counter.getAttribute('data-target');
-        const c = +counter.innerText;
-        const increment = target / 50;
-        if (c < target) {
-            counter.innerText = `${Math.ceil(c + increment)}`;
-            setTimeout(updateCounter, 30);
-        } else {
-            counter.innerText = target + (target % 1 !== 0 ? '%' : '+');
-        }
-    };
-    // trigger animation when visible
-    setTimeout(updateCounter, 500); 
-});
-</script>
 
 <?php include('../includes/footer.php'); ?>
